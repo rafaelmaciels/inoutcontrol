@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}InOutControl — Backup do Banco{% endblock %}
+
+{% block content %}
+<!-- Estilos específicos para unificação estética -->
+<style>
+  .form-clean-card {
+    border: 1px solid rgba(0,0,0,0.08) !important;
+    background-color: #ffffff;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .form-clean-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+  }
+  .form-label-clean {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #475569;
+  }
+  .form-control:focus {
+    border-color: #94a3b8 !important;
+    box-shadow: none !important;
+  }
+  .icon-wrapper {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+  }
+</style>
+
+<!-- Cabeçalho Principal -->
+<div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+  <div>
+    <h1 class="fw-bold mb-0 text-dark">
+      <i class="bi bi-hdd-stack text-secondary"></i> Gerenciamento de Backup
+    </h1>
+    <p class="text-muted small mb-0">Proteja seus dados exportando cópias de segurança ou restaure estados anteriores do sistema</p>
+  </div>
+  <a href="{{ url_for('dashboard.index') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-speedometer2"></i> Ir para o Dashboard
+  </a>
+</div>
+
+<div class="row g-4">
+
+  <!-- SEÇÃO: EXPORTAR BACKUP -->
+  <div class="col-md-6">
+    <div class="card form-clean-card shadow-sm rounded-3 h-100">
+      <div class="card-body p-4 d-flex flex-column justify-content-between">
+        
+        <div>
+          <div class="d-flex align-items-center gap-3 mb-4">
+            <div class="icon-wrapper bg-light text-danger border">
+              <i class="bi bi-download fs-5"></i>
+            </div>
+            <div>
+              <h5 class="fw-bold mb-0 text-dark">Exportar Backup</h5>
+              <small class="text-muted">Gere um pacote comprimido de segurança</small>
+            </div>
+          </div>
+
+          <form method="POST" action="{{ url_for('backup.backup_execute') }}">
+            <div class="mb-3">
+              <label class="form-label form-label-clean fw-bold">Nome do Arquivo</label>
+              <input type="text" name="nome" class="form-control"
+                     placeholder="ex: backup_servidor" required>
+              <div class="form-text text-muted" style="font-size: 0.75rem;">O sistema adicionará a extensão .zip automaticamente.</div>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label form-label-clean fw-bold">Senha de Criptografia (ZIP)</label>
+              <input type="password" name="senha" class="form-control"
+                     placeholder="Defina uma senha segura" required>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 pt-3 border-top mt-auto">
+          <a href="{{ url_for('dashboard.index') }}" class="btn btn-light border px-3 flex-grow-1 text-center">
+            Cancelar
+          </a>
+          <button type="submit" class="btn btn-dark px-4 flex-grow-2">
+            <i class="bi bi-file-earmark-zip me-1"></i> Gerar Backup ZIP
+          </button>
+        </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- SEÇÃO: IMPORTAR / RESTAURAR BACKUP -->
+  <div class="col-md-6">
+    <div class="card form-clean-card shadow-sm rounded-3 h-100">
+      <div class="card-body p-4 d-flex flex-column justify-content-between">
+        
+        <div>
+          <div class="d-flex align-items-center gap-3 mb-4">
+            <div class="icon-wrapper bg-light text-primary border">
+              <i class="bi bi-upload fs-5"></i>
+            </div>
+            <div>
+              <h5 class="fw-bold mb-0 text-dark">Restaurar Sistema</h5>
+              <small class="text-muted">Suba uma cópia para reverter dados</small>
+            </div>
+          </div>
+
+          <form method="POST" action="{{ url_for('backup.backup_import') }}" enctype="multipart/form-data">
+            <div class="mb-3">
+              <label class="form-label form-label-clean fw-bold">Arquivo compactado (.zip)</label>
+              <input type="file" name="arquivo" class="form-control" accept=".zip" required>
+              <div class="form-text text-muted" style="font-size: 0.75rem;">Selecione exclusivamente pacotes gerados pelo sistema.</div>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label form-label-clean fw-bold">Senha do Arquivo ZIP</label>
+              <input type="password" name="senha" class="form-control"
+                     placeholder="Digite a senha do pacote" required>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 pt-3 border-top mt-auto">
+          <a href="{{ url_for('dashboard.index') }}" class="btn btn-light border px-3 flex-grow-1 text-center">
+            Cancelar
+          </a>
+          <button type="submit" class="btn btn-primary px-4 flex-grow-2 shadow-sm">
+            <i class="bi bi-arrow-repeat me-1"></i> Restaurar Dados
+          </button>
+        </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

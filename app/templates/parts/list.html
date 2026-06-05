@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+{% block title %}Peças - StockControl{% endblock %}
+
+{% block content %}
+<!-- Estilos específicos unificados com a nova identidade visual -->
+<style>
+  .action-card {
+    transition: all 0.25s ease;
+    border: 1px solid rgba(0,0,0,0.08) !important;
+  }
+  .action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.08) !important;
+  }
+  .zoom-container {
+    overflow: hidden;
+    position: relative;
+    cursor: crosshair;
+    display: inline-block;
+    max-height: 60vh;
+    margin: auto;
+    border-radius: 4px;
+  }
+  .zoom-container img {
+    transition: transform 0.1s ease-out, rotate 0.3s ease;
+    max-height: 60vh;
+    display: block;
+    margin: auto;
+  }
+  .table-clean th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    background-color: #f8f9fa !important;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6 !important;
+  }
+  .form-control:focus {
+    border-color: #94a3b8 !important;
+    box-shadow: none !important;
+  }
+</style>
+
+<!-- Cabeçalho Principal -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+  <div>
+    <h1 class="fw-bold mb-0 text-dark"><i class="bi bi-gear text-secondary"></i> Peças</h1>
+    <p class="text-muted small mb-0">Gerenciamento e controle de componentes do inventário</p>
+  </div>
+  
+  <!-- Ações Unificadas (Menu Limpo - Botão superior de Etiquetas removido conforme solicitado) -->
+  <div class="d-flex gap-2 mt-3 mt-md-0">
+    <div class="dropdown">
+      <button class="btn btn-dark dropdown-toggle" type="button" id="dropdownAcoesPecas" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-grid-3x3-gap-fill"></i> Ações
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end shadow">
+        <li>
+          <a class="dropdown-item text-primary fw-bold" href="{{ url_for('parts.create_part') }}">
+            <i class="bi bi-plus-circle me-2"></i> Nova peça
+          </a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">Exportar Relatórios PDF</li>
+        <li>
+          <a class="dropdown-item" href="{{ url_for('parts.relatorio_pecas', filtro='todas') }}" target="_blank" rel="noopener noreferrer">
+            <i class="bi bi-filetype-pdf me-2 text-danger"></i> Todas as peças
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item" href="{{ url_for('parts.relatorio_pecas', filtro='faltando') }}" target="_blank" rel="noopener noreferrer">
+            <i class="bi bi-filetype-pdf me-2 text-danger"></i> Apenas em falta
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item" href="{{ url_for('parts.relatorio_pecas', filtro='baixo_estoque') }}" target="_blank" rel="noopener noreferrer">
+            <i class="bi bi-filetype-pdf me-2 text-danger"></i> Baixo estoque
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Seção Operacional Superior (Busca + Resumo + Valor Oculto) -->
+<div class="row g-3 mb-4">
+  <!-- Card de Busca Rápida -->
+  <div class="col-md-5">
+    <div class="card action-card shadow-sm bg-white h-100 border-0">
+      <div class="card-body d-flex flex-column justify-content-center py-3">
+        <span class="text-uppercase text-muted tracking-wider small mb-2 d-block" style="font-size: 0.75rem; font-weight:600;">Pesquisa de Inventário</span>
+        <form class="d-flex" method="get">
+          <input type="text" class="form-control me-2" name="q" placeholder="Buscar por nome, código ou descrição..." value="{{ termo }}">
+          <button class="btn btn-secondary px-3"><i class="bi bi-search"></i></button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card Indicador Clean de Itens -->
+  <div class="col-md-3">
+    <div class="card action-card shadow-sm bg-light h-100 border-0">
+      <div class="card-body d-flex align-items-center justify-content-between py-3">
+        <div>
+          <span class="text-uppercase text-muted tracking-wider small d-block" style="font-size: 0.75rem; font-weight:600;">Listagem Atual</span>
+          <h5 class="fw-bold mb-0 text-dark mt-1">
+            <i class="bi bi-boxes text-secondary me-1"></i> {{ parts.total }} Itens
+          </h5>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOVO CARD: VALOR TOTAL DO ESTOQUE COM MÁSCARA -->
+  <div class="col-md-4">
+    <div class="card action-card shadow-sm bg-light h-100 border-0">
+      <div class="card-body d-flex align-items-center justify-content-between py-3">
+        <div>
+          <span class="text-uppercase text-muted tracking-wider small d-block" style="font-size: 0.75rem; font-weight:600;">Valor Total do Estoque</span>
+          <h5 class="fw-bold mb-0 text-dark mt-1" id="txtValorEstoque" data-valor="R$ {{ total_custo_estoque|brmoeda }}">
+            R$ ••••••
+          </h5>
+        </div>
+        <button class="btn btn-white border btn-sm p-2 rounded-3 shadow-sm bg-white" id="btnToggleVisibilidade" type="button" title="Revelar valor total">
+          <i class="bi bi-eye-slash text-secondary" id="iconeOlho" style="font-size: 1.1rem;"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabela de Itens Clean -->
+<div class="table-responsive">
+  <table class="table table-hover table-clean shadow-sm bg-white align-middle border">
+    <thead>
+      <tr>
+        <th class="text-center" style="width: 80px;">Foto</th>
+        <th>Código</th>
+        <th>Nome</th>
+        <th>Descrição</th>
+        <th class="text-center">Qtd</th>
+        <th>Valor custo</th>
+        <th class="text-end" style="width: 140px;">Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for part in parts.items %}
+      <tr>
+        <td class="text-center">
+          {% if part.foto %}
+            <img src="{{ url_for('uploaded_file', filename=part.foto) }}"
+                 alt="Foto"
+                 width="44"
+                 height="44"
+                 style="object-fit: cover; border-radius: 6px; cursor: zoom-in; border: 1px solid rgba(0,0,0,0.15);"
+                 data-bs-toggle="modal"
+                 data-bs-target="#modalFoto{{ part.id }}">
+          {% else %}
+            <i class="bi bi-image text-muted fs-4 opacity-50"></i>
+          {% endif %}
+        </td>
+
+        <td class="text-secondary fw-mono small">{{ part.codigo }}</td>
+        <td>
+          <span class="fw-bold text-dark">{{ part.nome }}</span>
+          {% if part.em_falta %}
+            <span class="badge bg-danger ms-1" style="font-size: 0.7rem;">Em falta</span>
+          {% endif %}
+        </td>
+        <td class="text-muted small text-truncate" style="max-width: 250px;">{{ part.descricao or '-' }}</td>
+
+        <td class="text-center">
+          {% if part.quantidade <= 2 %}
+            <span class="badge bg-danger rounded-pill px-2.5">{{ part.quantidade }}</span>
+          {% else %}
+            <span class="badge bg-primary rounded-pill px-2.5">{{ part.quantidade }}</span>
+          {% endif %}
+        </td>
+
+        <td class="text-dark fw-medium">R$ {{ part.valor_custo|brmoeda }}</td>
+
+        <td class="text-end">
+          <div class="btn-group">
+            <!-- Dropdown de Impressão de Etiquetas Adicionado aqui na Linha -->
+            <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-outline-secondary border-0" data-bs-toggle="dropdown" aria-expanded="false" title="Imprimir Etiqueta">
+                <i class="bi bi-printer"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow">
+                <li><h6 class="dropdown-header text-dark fw-bold">Modelos disponíveis:</h6></li>
+                <li><a class="dropdown-item small" href="{{ url_for('parts.etiquetas_pdf', modelo='termica', id=part.id) }}" target="_blank"><i class="bi bi-receipt me-2"></i>Térmica (80mm)</a></li>
+                <li><a class="dropdown-item small" href="{{ url_for('parts.etiquetas_pdf', modelo='pequena', id=part.id) }}" target="_blank"><i class="bi bi-grid-3x3-gap me-2"></i>Compacta (50x30)</a></li>
+                <li><a class="dropdown-item small" href="{{ url_for('parts.etiquetas_pdf', modelo='a4', id=part.id) }}" target="_blank"><i class="bi bi-file-earmark-text me-2"></i>Folha A4 (3 colunas)</a></li>
+                <li><div class="dropdown-divider"></div></li>
+                <li><a class="dropdown-item small" href="{{ url_for('parts.etiquetas_pdf', modelo='qrcode', id=part.id) }}" target="_blank"><i class="bi bi-qr-code me-2"></i>Apenas QR Code</a></li>
+                <li><a class="dropdown-item small" href="{{ url_for('parts.etiquetas_pdf', modelo='barcode', id=part.id) }}" target="_blank"><i class="bi bi-upc-scan me-2"></i>Apenas Cód. Barras</a></li>
+                <li><a class="dropdown-item small" href="{{ url_for('parts.etiquetas_pdf', modelo='completo', id=part.id) }}" target="_blank"><i class="bi bi-layers me-2"></i>Etiqueta Completa</a></li>
+              </ul>
+            </div>
+
+            <a href="{{ url_for('parts.edit_part', id=part.id) }}" class="btn btn-sm btn-outline-secondary border-0" title="Editar Peça">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-danger border-0" data-bs-toggle="modal" data-bs-target="#modalExcluir{{ part.id }}" title="Excluir Peça">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+
+      <!-- Modal de exclusão -->
+      <div class="modal fade" id="modalExcluir{{ part.id }}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+              <h5 class="modal-title"><i class="bi bi-exclamation-triangle text-warning"></i> Confirmar exclusão</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              Tem certeza que deseja excluir a peça <strong>{{ part.nome }}</strong>?<br>
+              Esta ação é permanente e não poderá ser desfeita.
+            </div>
+            <div class="modal-footer d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-outline-secondary flex-fill flex-md-grow-0" data-bs-dismiss="modal">
+                Cancelar
+              </button>
+              <a href="{{ url_for('parts.delete_part', id=part.id) }}" class="btn btn-danger flex-fill flex-md-grow-0">
+                <i class="bi bi-trash"></i> Excluir Peça
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal da foto -->
+      {% if part.foto %}
+      <div class="modal fade" id="modalFoto{{ part.id }}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+              <h5 class="modal-title">{{ part.nome }}</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center" style="max-height:65vh; overflow:hidden;">
+              <div class="zoom-container" id="boxZoom{{ part.id }}">
+                <img id="imgZoom{{ part.id }}"
+                     src="{{ url_for('uploaded_file', filename=part.foto) }}"
+                     alt="Foto"
+                     class="img-fluid">
+              </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between align-items-center">
+              <span class="text-muted small">Código: <strong>{{ part.codigo }}</strong></span>
+              <button class="btn btn-secondary btn-sm" onclick="rotateImage('imgZoom{{ part.id }}')">
+                <i class="bi bi-arrow-clockwise"></i> Girar Imagem
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      {% else %}
+      <tr>
+        <td colspan="7" class="text-center py-4 text-muted">
+          <i class="bi bi-inbox d-block fs-3 mb-2"></i> Nenhuma peça localizada com os critérios fornecidos.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Componente de Paginação Dinâmica -->
+{% set data = parts %}
+{% include "components/pagination.html" %}
+
+<!-- MODAL DE VALIDAÇÃO DE SENHA -->
+<div class="modal fade" id="modalSenhaEstoque" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content shadow border-0 rounded-3">
+      <div class="modal-body p-4">
+        
+        <div class="text-center mb-3">
+          <div class="d-inline-flex p-3 bg-light rounded-circle border mb-2 text-dark">
+            <i class="bi bi-shield-lock fs-4"></i>
+          </div>
+          <h6 class="fw-bold text-dark mb-1">Acesso Restrito</h6>
+          <p class="text-muted small mb-0">Digite a senha para ver o capital geral</p>
+        </div>
+
+        <div class="mb-3">
+          <input type="password" id="inputSenhaEstoque" class="form-control text-center" placeholder="••••••••" required>
+          <div class="invalid-feedback text-center mt-2" id="erroSenhaMsg" style="display: none; font-size: 0.75rem; color: #dc3545;">
+            Senha incorreta. Tente novamente.
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-light border w-100 btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-dark w-100 btn-sm" id="btnConfirmarSenha">Confirmar</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts Operacionais (Zoom, Rotação e Sistema de Senha) -->
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // Efeito de Zoom
+    document.querySelectorAll(".zoom-container").forEach(container => {
+      const img = container.querySelector("img");
+
+      container.addEventListener("mousemove", (e) => {
+        const { left, top, width, height } = container.getBoundingClientRect();
+        const x = ((e.clientX - left) / width) * 100;
+        const y = ((e.clientY - top) / height) * 100;
+        
+        img.style.transformOrigin = `${x}% ${y}%`;
+        const currentRotate = img.dataset.rotate || 0;
+        img.style.transform = `scale(2) rotate(${currentRotate}deg)`;
+      });
+
+      container.addEventListener("mouseleave", () => {
+        const currentRotate = img.dataset.rotate || 0;
+        img.style.transformOrigin = "center center";
+        img.style.transform = `scale(1) rotate(${currentRotate}deg)`;
+      });
+    });
+
+    // Lógica da trava de senha do estoque geral
+    const btnToggle = document.getElementById("btnToggleVisibilidade");
+    const iconeOlho = document.getElementById("iconeOlho");
+    const txtValor = document.getElementById("txtValorEstoque");
+    
+    const modalElement = document.getElementById("modalSenhaEstoque");
+    const modalBootstrap = new bootstrap.Modal(modalElement);
+    const btnConfirmar = document.getElementById("btnConfirmarSenha");
+    const inputSenha = document.getElementById("inputSenhaEstoque");
+    const erroSenha = document.getElementById("erroSenhaMsg");
+
+    const SENHA_CORRETA = "1234"; // Configure a senha do estoque aqui
+    let valorRevelado = false;
+
+    btnToggle.addEventListener("click", function() {
+      if (!valorRevelado) {
+        inputSenha.value = "";
+        erroSenha.style.display = "none";
+        inputSenha.classList.remove("is-invalid");
+        modalBootstrap.show();
+        setTimeout(() => inputSenha.focus(), 400);
+      } else {
+        txtValor.textContent = "R$ ••••••";
+        iconeOlho.className = "bi bi-eye-slash text-secondary";
+        valorRevelado = false;
+      }
+    });
+
+    function validarAcesso() {
+      if (inputSenha.value === SENHA_CORRETA) {
+        const valorOriginal = txtValor.getAttribute("data-valor");
+        txtValor.textContent = valorOriginal;
+        iconeOlho.className = "bi bi-eye text-success";
+        valorRevelado = true;
+        modalBootstrap.hide();
+      } else {
+        erroSenha.style.display = "block";
+        inputSenha.classList.add("is-invalid");
+        inputSenha.value = "";
+        inputSenha.focus();
+      }
+    }
+
+    btnConfirmar.addEventListener("click", validarAcesso);
+    inputSenha.addEventListener("keypress", function(e) {
+      if (e.key === "Enter") {
+        validarAcesso();
+      }
+    });
+
+    inputSenha.addEventListener("input", function() {
+      erroSenha.style.display = "none";
+      inputSenha.classList.remove("is-invalid");
+    });
+  });
+
+  function rotateImage(id) {
+    const img = document.getElementById(id);
+    let currentRotate = img.dataset.rotate ? parseInt(img.dataset.rotate) : 0;
+    currentRotate = (currentRotate + 90) % 360;
+    img.dataset.rotate = currentRotate;
+    img.style.transform = `scale(1) rotate(${currentRotate}deg)`;
+  }
+</script>
+{% endblock %}

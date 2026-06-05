@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}InOutControl — Peças{% endblock %}
+
+{% block content %}
+<!-- Estilos específicos para unificação estética -->
+<style>
+  .form-clean-card {
+    border: 1px solid rgba(0,0,0,0.08) !important;
+    background-color: #ffffff;
+  }
+  .info-alert-clean {
+    border-left: 4px solid #0d6efd !important;
+    background-color: #f8fafc;
+  }
+  .form-label-clean {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #475569;
+  }
+  .form-control:focus, .form-select:focus {
+    border-color: #94a3b8 !important;
+    box-shadow: none !important;
+  }
+</style>
+
+<!-- Cabeçalho Principal -->
+<div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+  <div>
+    <h1 class="fw-bold mb-0 text-dark">
+      <i class="bi bi-gear text-secondary"></i> 
+      {% if part %}Editar Peça{% else %}Nova Peça{% endif %}
+    </h1>
+    <p class="text-muted small mb-0">Gerencie as propriedades estruturais, custos e quantitativos do item no almoxarifado</p>
+  </div>
+  <a href="{{ url_for('parts.list_parts') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Voltar à listagem
+  </a>
+</div>
+
+<!-- Bloco Informativo de Diretrizes -->
+<div class="card info-alert-clean shadow-sm border-0 mb-4 rounded-3">
+  <div class="card-body py-3">
+    <h6 class="fw-bold text-primary mb-1 d-flex align-items-center gap-2">
+      <i class="bi bi-info-circle-fill"></i> Diretrizes de Inventário
+    </h6>
+    <p class="mb-0 text-muted small">
+      O código identificador deve ser <strong>único por item</strong>. Insira quantidades baseadas em valores inteiros. 
+      O campo de custo aceita pontuação decimal flexível (Ex: <code class="text-dark fw-bold">1500,00</code> ou <code class="text-dark fw-bold">1500.00</code>).
+    </p>
+  </div>
+</div>
+
+<!-- Card Central do Formulário -->
+<div class="card form-clean-card shadow-sm rounded-3">
+  <div class="card-body p-4">
+
+    <form method="POST" enctype="multipart/form-data">
+      <div class="row g-3">
+        
+        <!-- Coluna Esquerda -->
+        <div class="col-md-6">
+          
+          <!-- Código -->
+          <div class="mb-3">
+            <label class="form-label form-label-clean fw-bold">Código do Item</label>
+            <input type="text" name="codigo" class="form-control"
+                   value="{{ part.codigo if part else '' }}"
+                   placeholder="Ex: P001" required>
+          </div>
+
+          <!-- Nome -->
+          <div class="mb-3">
+            <label class="form-label form-label-clean fw-bold">Nome da Peça</label>
+            <input type="text" name="nome" class="form-control"
+                   value="{{ part.nome if part else '' }}"
+                   placeholder="Ex: Parafuso 10mm" required>
+          </div>
+
+          <!-- Quantidade -->
+          <div class="mb-3">
+            <label class="form-label form-label-clean fw-bold">Quantidade Inicial</label>
+            <input type="number" name="quantidade" class="form-control"
+                   value="{{ part.quantidade if part else '' }}"
+                   placeholder="Ex: 100" required>
+          </div>
+
+        </div>
+
+        <!-- Coluna Direita -->
+        <div class="col-md-6">
+
+          <!-- Valor de Custo -->
+          <div class="mb-3">
+            <label class="form-label form-label-clean fw-bold">Valor de Custo</label>
+            <input type="text" name="valor_custo" class="form-control"
+                   value="{% if part and part.valor_custo is not none %}{{ '%.2f'|format(part.valor_custo) }}{% endif %}"
+                   placeholder="Ex: 1500,00" required>
+            <div class="form-text text-muted" style="font-size: 0.75rem;">Suporta pontos ou vírgulas para separação decimal.</div>
+          </div>
+
+          <!-- Descrição -->
+          <div class="mb-3">
+            <label class="form-label form-label-clean fw-bold">Descrição Detalhada</label>
+            <textarea name="descricao" class="form-control" rows="4"
+                      placeholder="Ex: Peça utilizada em sistemas de transmissão de máquinas industriais...">{{ part.descricao if part else '' }}</textarea>
+          </div>
+
+          <!-- Foto do Item -->
+          <div class="mb-3">
+            <label class="form-label form-label-clean fw-bold">Documentação Visual (Foto)</label>
+            <input type="file" name="foto_arquivo" class="form-control" accept="image/*">
+
+            {% if part and part.foto %}
+            <div class="mt-3 p-2 bg-light rounded border">
+              <span class="text-uppercase tracking-wider text-muted d-block mb-1" style="font-size: 0.7rem; font-weight: 600;">Mídia Armazenada Atualmente:</span>
+              <img src="{{ url_for('uploaded_file', filename=part.foto) }}"
+                   alt="Foto da peça" class="img-thumbnail d-block mb-2 shadow-sm" style="max-width: 140px; height: auto;">
+              
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="remover_foto" value="1" id="removerFoto">
+                <label class="form-check-label text-danger small fw-medium" for="removerFoto" style="cursor: pointer;">
+                  <i class="bi bi-image-alt"></i> Marcar para remover foto atual
+                </label>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Barra de Ações Inferior -->
+      <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+        <a href="{{ url_for('parts.list_parts') }}" class="btn btn-light border px-3">
+          Cancelar
+        </a>
+        <button type="submit" class="btn btn-dark px-4">
+          <i class="bi bi-check-circle me-1"></i> Salvar Registro
+        </button>
+      </div>
+
+    </form>
+    
+  </div>
+</div>
+{% endblock %}

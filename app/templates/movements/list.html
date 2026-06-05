@@ -1,0 +1,492 @@
+{% extends "base.html" %}
+{% block title %}Movimentações - StockControl{% endblock %}
+
+{% block content %}
+<!-- Links do Tom Select (Estilo Bootstrap 5 integrado) -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+
+<!-- Estilos modernos para uma interface limpa e minimalista -->
+<style>
+  .action-card {
+    transition: all 0.25s ease;
+    border: 1px solid rgba(0,0,0,0.08) !important;
+  }
+  .action-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1) !important;
+  }
+  .timeline-card {
+    border: none !important;
+    border-left: 4px solid #ccc !important;
+    border-radius: 0 8px 8px 0;
+    background-color: #ffffff;
+  }
+  .timeline-card.border-danger { border-left-color: #dc3545 !important; }
+  .timeline-card.border-success { border-left-color: #198754 !important; }
+
+  /* Customização sutil para manter a busca interna alinhada com o design */
+  .ts-wrapper .ts-control {
+    border-color: #dee2e6;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 0.25rem;
+  }
+  .ts-wrapper.focus .ts-control {
+    border-color: #94a3b8 !important;
+    box-shadow: none !important;
+  }
+</style>
+
+<!-- Cabeçalho Principal -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+  <div>
+    <h1 class="fw-bold mb-0 text-dark"><i class="bi bi-arrow-left-right text-secondary"></i> Movimentações</h1>
+    <p class="text-muted small mb-0">Página {{ movements.page }} de {{ movements.pages }} — {{ movements.total }} registros hoje</p>
+  </div>
+  
+  <!-- Ações Unificadas -->
+  <div class="d-flex gap-2 mt-3 mt-md-0">
+    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFiltros" aria-expanded="false">
+      <i class="bi bi-filter"></i> Filtrar
+    </button>
+    
+    <div class="dropdown">
+      <button class="btn btn-dark dropdown-toggle" type="button" id="dropdownAcoes" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-grid-3x3-gap-fill"></i> Ações
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end shadow">
+        <li>
+          <a class="dropdown-item" href="{{ url_for('movements.create_movement') }}">
+            <i class="bi bi-plus-circle me-2 text-primary"></i> Novo movimento manual
+          </a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <a class="dropdown-item" href="{{ url_for('movements.pdf_movements', dia=dia_atual) }}">
+            <i class="bi bi-filetype-pdf me-2 text-danger"></i> Exportar PDF do Dia
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item" href="{{ url_for('movements.relatorio_mensal') }}">
+            <i class="bi bi-bar-chart me-2 text-info"></i> Relatório Mensal
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Seção de Operação Direta (Cards Estilo Dashboard) -->
+<div class="row g-3 mb-4">
+  <!-- Bloco do Scanner -->
+  <div class="col-md-6">
+    <div class="row g-2 h-100">
+      
+      <!-- Botão Registrar Retirada (Saída) -->
+      <div class="col-6">
+        <div class="card action-card shadow-sm bg-dark text-white h-100" style="cursor: pointer;" onclick="iniciarFluxoScanner('saida'); new bootstrap.Modal(document.getElementById('modalScanner')).show();">
+          <div class="card-body d-flex flex-column justify-content-between py-3">
+            <div>
+              <div class="d-flex align-items-center gap-1 mb-1 flex-wrap">
+                <span class="badge bg-warning text-dark fw-bold" style="font-size: 0.7rem;">Atalho F2</span>
+                <span class="text-muted small text-light-50" style="font-size: 0.7rem;">• Saída</span>
+              </div>
+              <h6 class="card-title mb-0 fw-bold text-warning"><i class="bi bi-qr-code-scan"></i> Retirada</h6>
+            </div>
+            <p class="text-muted text-light-50 small mb-0 mt-2" style="font-size: 0.75rem;">Bipar saída de peça</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botão Registrar Devolução (Entrada) -->
+      <div class="col-6">
+        <div class="card action-card shadow-sm bg-dark text-white h-100" style="cursor: pointer;" onclick="iniciarFluxoScanner('entrada'); new bootstrap.Modal(document.getElementById('modalScanner')).show();">
+          <div class="card-body d-flex flex-column justify-content-between py-3">
+            <div>
+              <div class="d-flex align-items-center gap-1 mb-1 flex-wrap">
+                <span class="badge bg-success text-white fw-bold" style="font-size: 0.7rem;">Atalho F3</span>
+                <span class="text-muted small text-light-50" style="font-size: 0.7rem;">• Entrada</span>
+              </div>
+              <h6 class="card-title mb-0 fw-bold text-success"><i class="bi bi-arrow-return-left"></i> Devolução</h6>
+            </div>
+            <p class="text-muted text-light-50 small mb-0 mt-2" style="font-size: 0.75rem;">Bipar entrada/retorno</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Card Data -->
+  <div class="col-md-6">
+    <div class="card action-card shadow-sm bg-white h-100">
+      <div class="card-body d-flex align-items-center justify-content-between py-3">
+        <a href="{{ url_for('movements.list_movements', dia=dia_anterior) }}" class="btn btn-sm btn-link text-secondary p-0 text-decoration-none">
+          <i class="bi bi-chevron-left fs-4"></i>
+        </a>
+        
+        <div class="text-center">
+          <span class="text-uppercase text-muted tracking-wider small d-block">Data Visualizada</span>
+          <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-calendar2-check text-primary"></i> {{ dia_atual }}</h5>
+        </div>
+
+        <a href="{{ url_for('movements.list_movements', dia=dia_posterior) }}" class="btn btn-sm btn-link text-secondary p-0 text-decoration-none">
+          <i class="bi bi-chevron-right fs-4"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filtros Ocultáveis com Busca Embutida Internamente -->
+<div class="collapse mb-4" id="collapseFiltros">
+  <form class="card card-body shadow-sm border-0 bg-light" method="get">
+    <input type="hidden" name="dia" value="{{ dia_atual }}">
+    <div class="row g-3">
+      
+      <!-- Usuário (Busca interna embutida) -->
+      <div class="col-md-3">
+        <label class="form-label small fw-bold">Usuário</label>
+        <select class="form-select form-select-sm buscar-interno" id="select-user" name="user_id">
+          <option value="">Todos os Usuários</option>
+          {% for u in users %}
+          <option value="{{ u.id }}" {% if user_id == u.id %}selected{% endif %}>{{ u.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Peça (Busca interna embutida para mais de 400 itens) -->
+      <div class="col-md-3">
+        <label class="form-label small fw-bold">Peça</label>
+        <select class="form-select form-select-sm buscar-interno" id="select-part" name="part_id">
+          <option value="">Todas as Peças</option>
+          {% for p in parts %}
+          <option value="{{ p.id }}" {% if part_id == p.id %}selected{% endif %}>{{ p.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label small fw-bold">Status</label>
+        <select class="form-select form-select-sm" name="status">
+          <option value="">Todos</option>
+          <option value="aberto" {% if status == 'aberto' %}selected{% endif %}>Em aberto</option>
+          <option value="fechado" {% if status == 'fechado' %}selected{% endif %}>Devolvido</option>
+        </select>
+      </div>
+
+      <div class="col-md-3 d-flex align-items-end">
+        <button class="btn btn-sm btn-secondary w-100" style="height: 38px;">
+          <i class="bi bi-search"></i> Aplicar Filtros
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Seletor do fluxo rápido alternativo via Dropdown Mantido -->
+<div class="d-none">
+  <button id="dropdownScanner" data-bs-toggle="dropdown"></button>
+</div>
+
+<!-- Timeline Clean -->
+<ul class="timeline list-unstyled">
+  {% for mov in movements.items %}
+  <li class="mb-3">
+    <div class="card timeline-card shadow-sm border-{{ 'danger' if mov.emprestimo_aberto else 'success' }}">
+      <div class="card-body py-3">
+
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+          <div>
+            {% if mov.tipo == 'saida' %}
+              <span class="badge bg-warning text-dark me-1">Retirada</span>
+            {% else %}
+              <span class="badge bg-success me-1">Entrada</span>
+            {% endif %}
+            <span class="fw-bold text-dark fs-5">{{ mov.part.nome }}</span>
+          </div>
+
+          <span class="text-muted small">
+            <i class="bi bi-clock"></i> {{ mov.data_hora.strftime('%H:%M') }} • {{ mov.tempo_relativo }}
+          </span>
+        </div>
+
+        <div class="row text-secondary small mb-2">
+          <div class="col-sm-6"><strong>Operador:</strong> {{ mov.user.nome }}</div>
+          <div class="col-sm-6"><strong>Quantidade:</strong> {{ mov.quantidade }} un</div>
+          {% if mov.observacao %}
+          <div class="col-12 mt-1"><strong>Obs:</strong> <span class="text-italic">{{ mov.observacao }}</span></div>
+          {% endif %}
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap pt-2 border-top border-light">
+          {% if mov.emprestimo_aberto %}
+            <div class="d-flex gap-2 w-100 justify-content-between">
+              <button onclick="abrirModalDevolver({{ mov.id }})" class="btn btn-success btn-sm">
+                <i class="bi bi-box-arrow-in-left"></i> Devolver Item
+              </button>
+              <a href="{{ url_for('movements.comprovante', id=mov.id) }}" class="btn btn-outline-dark btn-sm">
+                <i class="bi bi-printer"></i> Recibo
+              </a>
+            </div>
+          {% else %}
+            <div class="w-100">
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="text-success small fw-bold">
+                  <i class="bi bi-check2-all"></i> Devolvido por {{ mov.devolvido_por }}
+                </span>
+                <a href="{{ url_for('movements.comprovante', id=mov.id) }}" class="btn btn-link btn-sm text-secondary p-0 text-decoration-none">
+                  <i class="bi bi-printer"></i> Imprimir Recibo
+                </a>
+              </div>
+              
+              {% if mov.data_devolucao and mov.data_devolucao >= mov.data_hora %}
+                {% set tempo = mov.data_devolucao - mov.data_hora %}
+                {% set dias = tempo.days %}
+                {% set horas = tempo.seconds // 3600 %}
+                {% set minutos = (tempo.seconds // 60) % 60 %}
+              {% else %}
+                {% set dias = 0 %}
+                {% set horas = 0 %}
+                {% set minutos = 0 %}
+              {% endif %}
+
+              <div class="text-muted" style="font-size: 0.78rem;">
+                <i class="bi bi-hourglass-split"></i> Posse: 
+                {% if dias > 0 %}{{ dias }}d {% endif %}{{ horas }}h {{ minutos }}min
+                • em {{ mov.data_devolucao.strftime('%d/%m/%Y %H:%M') if mov.data_devolucao else '' }}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </li>
+  {% else %}
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+    <p class="mb-0">Nenhuma movimentação registrada nesta data.</p>
+  </div>
+  {% endfor %}
+</ul>
+
+<!-- Paginação -->
+{% set data = movements %}
+{% include "components/pagination.html" %}
+
+<!-- Modal de devolução manual -->
+<div class="modal fade" id="modalDevolver" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="formDevolver">
+        <div class="modal-header">
+          <h5 class="modal-title">Registrar devolução</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="mov_id" id="mov_id">
+          <div class="mb-3">
+            <label class="form-label">Quem está devolvendo?</label>
+            <input type="text" class="form-control" name="devolvido_por" placeholder="Ex: João da Silva" required>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Data</label>
+              <input type="date" class="form-control" name="data_devolucao" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Hora</label>
+              <input type="time" class="form-control" name="hora_devolucao" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Observação</label>
+            <textarea class="form-control" name="observacao" placeholder="Ex: Peça devolvida em bom estado"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer d-flex flex-wrap gap-2">
+          <button class="btn btn-success flex-fill flex-md-grow-0">
+            <i class="bi bi-check-circle"></i> Confirmar
+          </button>
+          <button type="button" class="btn btn-outline-secondary flex-fill flex-md-grow-0" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle"></i> Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Scanner Ativo -->
+<div class="modal fade" id="modalScanner" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white text-center border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title" id="tituloModalScanner"><i class="bi bi-qr-code-scan"></i> Scanner Ativo</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body py-4">
+        
+        <div id="scannerPasso1">
+          <div class="mb-3">
+            <div id="corSpinnerPasso1" class="spinner-grow" role="status" style="width: 2.5rem; height: 2.5rem;"></div>
+          </div>
+          <h4 id="textoPasso1">PASSO 1: Identificar Operador</h4>
+          <p class="text-muted small">Bipe o crachá ou digite o código do <strong>Usuário</strong>.</p>
+        </div>
+
+        <div id="scannerPasso2" class="d-none">
+          <div class="mb-3">
+            <div id="corSpinnerPasso2" class="spinner-grow" role="status" style="width: 2.5rem; height: 2.5rem;"></div>
+          </div>
+          <h4 id="textoPasso2">PASSO 2: Identificar Item</h4>
+          <p class="text-white mb-1"><i class="bi bi-person-check-fill text-info"></i> Responsável: <span id="nomeUsuarioSelecionado" class="fw-bold"></span></p>
+          <p class="text-muted small">Agora, bipe o código de barras da <strong>Peça</strong>.</p>
+        </div>
+
+        <div class="mt-4 px-3">
+          <input type="text" id="inputScannerGeral" class="form-control text-center bg-secondary text-white border-0 fs-4" placeholder="Aguardando bip..." autocomplete="off">
+        </div>
+
+        <form id="formScannerFinal" action="{{ url_for('movements.create_movement_scanner') }}" method="POST">
+          <input type="hidden" id="hiddenUserCodigo" name="user_codigo">
+          <input type="hidden" id="hiddenPartCodigo" name="part_codigo">
+          <input type="hidden" id="hiddenTipoMovimento" name="tipo_movimento">
+        </form>
+      </div>
+      <div class="modal-footer border-secondary justify-content-center">
+        <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">Cancelar Operação</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lógica Javascript Interativa -->
+<script>
+  let passoAtual = 1;
+  let tipoOperacao = 'saida';
+
+  // --- Inicialização do Tom Select nos Dropdowns selecionados ---
+  document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll('.buscar-interno').forEach(select => {
+      new TomSelect(select, {
+        create: false,
+        sortField: { field: "text", direction: "asc" },
+        placeholder: select.options[0].text,
+        allowEmptyOption: true
+      });
+    });
+  });
+
+  // Controle de Atalhos de Teclado
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'F2') {
+      e.preventDefault();
+      acionarScannerTeclado('saida');
+    } else if (e.key === 'F3') {
+      e.preventDefault();
+      acionarScannerTeclado('entrada');
+    }
+  });
+
+  function acionarScannerTeclado(tipo) {
+    const modalScannerElement = document.getElementById('modalScanner');
+    if (!modalScannerElement.classList.contains('show')) {
+      iniciarFluxoScanner(tipo);
+      new bootstrap.Modal(modalScannerElement).show();
+    }
+  }
+
+  function iniciarFluxoScanner(tipo) {
+    passoAtual = 1;
+    tipoOperacao = tipo;
+    
+    document.getElementById('hiddenUserCodigo').value = '';
+    document.getElementById('hiddenPartCodigo').value = '';
+    document.getElementById('hiddenTipoMovimento').value = tipo;
+    
+    document.getElementById('scannerPasso1').classList.remove('d-none');
+    document.getElementById('scannerPasso2').classList.add('d-none');
+    
+    const titulo = document.getElementById('tituloModalScanner');
+    const txtPasso1 = document.getElementById('textoPasso1');
+    const txtPasso2 = document.getElementById('textoPasso2');
+    const spin1 = document.getElementById('corSpinnerPasso1');
+    const spin2 = document.getElementById('corSpinnerPasso2');
+    
+    spin1.className = "spinner-grow";
+    spin2.className = "spinner-grow";
+
+    if (tipo === 'saida') {
+      titulo.innerHTML = '<i class="bi bi-qr-code-scan text-warning"></i> MODO SCANNER: REGISTRAR RETIRADA';
+      txtPasso1.innerHTML = 'PASSO 1: Quem está retirando?';
+      txtPasso1.className = 'text-warning';
+      txtPasso2.innerHTML = 'PASSO 2: Qual peça está saindo?';
+      txtPasso2.className = 'text-warning';
+      spin1.classList.add('text-warning');
+      spin2.classList.add('text-warning');
+    } else {
+      titulo.innerHTML = '<i class="bi bi-qr-code-scan text-success"></i> MODO SCANNER: REGISTRAR DEVOLUÇÃO';
+      txtPasso1.innerHTML = 'PASSO 1: Quem está devolvendo?';
+      txtPasso1.className = 'text-success';
+      txtPasso2.innerHTML = 'PASSO 2: Qual peça está entrando?';
+      txtPasso2.className = 'text-success';
+      spin1.classList.add('text-success');
+      spin2.classList.add('text-success');
+    }
+    
+    const input = document.getElementById('inputScannerGeral');
+    input.value = '';
+    input.placeholder = "Bipe o Usuário...";
+    
+    setTimeout(() => { input.focus(); }, 500);
+  }
+
+  document.getElementById('inputScannerGeral').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const valor = this.value.trim();
+      if (!valor) return;
+
+      if (passoAtual === 1) {
+        document.getElementById('hiddenUserCodigo').value = valor;
+        document.getElementById('nomeUsuarioSelecionado').innerText = "Código [" + valor + "]";
+        document.getElementById('scannerPasso1').classList.add('d-none');
+        document.getElementById('scannerPasso2').classList.remove('d-none');
+        
+        this.value = '';
+        this.placeholder = "Bipe a Peça...";
+        passoAtual = 2;
+        this.focus();
+        
+      } else if (passoAtual === 2) {
+        document.getElementById('hiddenPartCodigo').value = valor;
+        document.getElementById('formScannerFinal').submit();
+      }
+    }
+  });
+
+  document.getElementById('modalScanner').addEventListener('click', function() {
+    document.getElementById('inputScannerGeral').focus();
+  });
+
+  function abrirModalDevolver(id) {
+    document.getElementById('mov_id').value = id;
+    document.getElementById('formDevolver').action = "/movements/devolver/" + id;
+    
+    const agora = new Date();
+    const dia = String(agora.getDate()).padStart(2, '0');
+    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const ano = agora.getFullYear();
+    const hora = String(agora.getHours()).padStart(2, '0');
+    const min = String(agora.getMinutes()).padStart(2, '0');
+    
+    document.querySelector('input[name="data_devolucao"]').value = `${ano}-${mes}-${dia}`;
+    document.querySelector('input[name="hora_devolucao"]').value = `${hora}:${min}`;
+    
+    new bootstrap.Modal(document.getElementById('modalDevolver')).show();
+  }
+</script>
+{% endblock %}

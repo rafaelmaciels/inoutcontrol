@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Nova Movimentação — InOutControl{% endblock %}
+
+{% block content %}
+<!-- Estilos específicos para unificação estética -->
+<style>
+  .form-clean-card {
+    border: 1px solid rgba(0,0,0,0.08) !important;
+    background-color: #ffffff;
+  }
+  .info-alert-clean {
+    border-left: 4px solid #0d6efd !important;
+    background-color: #f8fafc;
+  }
+  .form-label-clean {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #475569;
+  }
+  .form-control:focus, .form-select:focus {
+    border-color: #94a3b8 !important;
+    box-shadow: none !important;
+  }
+</style>
+
+<!-- Cabeçalho Principal -->
+<div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+  <div>
+    <h1 class="fw-bold mb-0 text-dark">
+      <i class="bi bi-plus-circle text-secondary"></i> Nova Movimentação
+    </h1>
+    <p class="text-muted small mb-0">Registre a saída ou transferência de componentes e atribua ao operador responsável</p>
+  </div>
+  <a href="{{ url_for('movements.list_movements') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Voltar à listagem
+  </a>
+</div>
+
+<!-- Bloco Informativo de Diretrizes -->
+<div class="card info-alert-clean shadow-sm border-0 mb-4 rounded-3">
+  <div class="card-body py-3">
+    <h6 class="fw-bold text-primary mb-1 d-flex align-items-center gap-2">
+      <i class="bi bi-info-circle-fill"></i> Diretrizes de Retirada
+    </h6>
+    <p class="mb-0 text-muted small">
+      Selecione corretamente o usuário e a peça correspondente. Certifique-se de que a quantidade informada está disponível no estoque atual. A data e hora são sugeridas automaticamente com base no momento atual, mas podem ser retroativas se necessário.
+    </p>
+  </div>
+</div>
+
+<!-- Card Central do Formulário -->
+<div class="card form-clean-card shadow-sm rounded-3">
+  <div class="card-body p-4">
+
+    <form method="POST">
+      <div class="row g-3">
+        
+        <!-- Coluna Esquerda -->
+        <div class="col-md-6">
+
+          <!-- Usuário -->
+          <div class="mb-3">
+            <label class="form-label form-label-clean fw-bold">Usuário / Funcionário</label>
+            <select class="form-select" name="user_id" required>
+              <option value="">Selecione o usuário...</option>
+              {% for user in users %}
+              <option value="{{ user.id }}">
+                {{ user.nome }} — {{ user.funcao }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Peça -->
+          <div class="mb-3">
+            <label class="form-label form-label-clean fw-bold">Peça / Componente</label>
+            <select class="form-select" name="part_id" required>
+              <option value="">Selecione a peça...</option>
+              {% for part in parts %}
+              <option value="{{ part.id }}">
+                {{ part.codigo }} — {{ part.nome }} (Disponível: {{ part.quantidade }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+        </div>
+
+        <!-- Coluna Direita -->
+        <div class="col-md-6">
+
+          <div class="row">
+            <!-- Quantidade -->
+            <div class="col-md-4 mb-3">
+              <label class="form-label form-label-clean fw-bold">Quantidade</label>
+              <input type="number" class="form-control" name="quantidade" min="1" value="1" placeholder="Ex: 5" required>
+            </div>
+
+            <!-- Data -->
+            <div class="col-md-4 mb-3">
+              <label class="form-label form-label-clean fw-bold">Data da retirada</label>
+              <input type="date" class="form-control" name="data_retirada" value="{{ now().strftime('%Y-%m-%d') if now else '' }}" required>
+            </div>
+
+            <!-- Hora -->
+            <div class="col-md-4 mb-3">
+              <label class="form-label form-label-clean fw-bold">Hora da retirada</label>
+              <input type="time" class="form-control" name="hora_retirada" value="{{ now().strftime('%H:%M') if now else '' }}" required>
+            </div>
+          </div>
+
+          <!-- Observação -->
+          <div class="mb-3">
+            <label class="form-label form-label-clean fw-bold">Observações de Campo</label>
+            <textarea class="form-control" name="observacao" rows="2" placeholder="Ex: Peça substituída devido a desgaste natural no maquinário X..."></textarea>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Barra de Ações Inferior -->
+      <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+        <a href="{{ url_for('movements.list_movements') }}" class="btn btn-light border px-3">
+          Cancelar
+        </a>
+        <button type="submit" class="btn btn-dark px-4">
+          <i class="bi bi-check-circle me-1"></i> Registrar Movimentação
+        </button>
+      </div>
+
+    </form>
+    
+  </div>
+</div>
+{% endblock %}

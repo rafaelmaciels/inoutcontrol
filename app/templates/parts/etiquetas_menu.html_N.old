@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Etiquetas - StockControl{% endblock %}
+
+{% block content %}
+<!-- Estilos específicos unificados com a nova identidade visual -->
+<style>
+  .action-card {
+    transition: all 0.25s ease;
+    border: 1px solid rgba(0,0,0,0.08) !important;
+  }
+  .action-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.08) !important;
+  }
+  .action-card:hover .etq-icon {
+    color: #212529 !important;
+    transform: scale(1.1);
+  }
+  .etq-icon {
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+  }
+</style>
+
+<!-- Cabeçalho Principal -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+  <div>
+    <h1 class="fw-bold mb-0 text-dark"><i class="bi bi-printer text-secondary"></i> Modelos de Etiquetas</h1>
+    <p class="text-muted small mb-0">Selecione o layout ideal para impressão e identificação dos componentes</p>
+  </div>
+  
+  <div class="mt-3 mt-md-0">
+    <a href="{{ url_for('parts.list_parts') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Voltar para Peças
+    </a>
+  </div>
+</div>
+
+<!-- Alerta informativo caso seja impressão individual -->
+{% if part %}
+<div class="alert alert-secondary d-flex align-items-center border-0 shadow-sm mb-4" role="alert">
+  <i class="bi bi-info-circle-fill me-2 fs-5 text-secondary"></i>
+  <div>
+    Modo de impressão individual ativo para a peça: <strong class="text-dark">{{ part.nome }}</strong> <span class="badge bg-dark ms-2">{{ part.codigo }}</span>
+  </div>
+</div>
+{% endif %}
+
+<!-- Grade de Modelos de Etiquetas -->
+<div class="row g-3">
+
+  <!-- Térmica -->
+  <div class="col-md-4 col-sm-6">
+    <a href="{{ url_for('parts.etiquetas_pdf', modelo='termica', id=part.id if part else None) }}" class="text-decoration-none text-reset" target="_blank" rel="noopener noreferrer">
+      <div class="card action-card shadow-sm h-100 bg-white">
+        <div class="card-body p-4 text-center">
+          <div class="etq-icon bg-light text-muted mb-3 fs-3">
+            <i class="bi bi-receipt"></i>
+          </div>
+          <h6 class="fw-bold text-dark mb-1">Etiqueta Térmica</h6>
+          <p class="text-muted small mb-0">80mm — Otimizado para impressoras térmicas</p>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Compacta -->
+  <div class="col-md-4 col-sm-6">
+    <a href="{{ url_for('parts.etiquetas_pdf', modelo='pequena', id=part.id if part else None) }}" class="text-decoration-none text-reset" target="_blank" rel="noopener noreferrer">
+      <div class="card action-card shadow-sm h-100 bg-white">
+        <div class="card-body p-4 text-center">
+          <div class="etq-icon bg-light text-muted mb-3 fs-3">
+            <i class="bi bi-grid-3x3-gap"></i>
+          </div>
+          <h6 class="fw-bold text-dark mb-1">Etiqueta Compacta</h6>
+          <p class="text-muted small mb-0">50×30mm — Ideal para peças de tamanho reduzido</p>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- A4 -->
+  <div class="col-md-4 col-sm-6">
+    <a href="{{ url_for('parts.etiquetas_pdf', modelo='a4', id=part.id if part else None) }}" class="text-decoration-none text-reset" target="_blank" rel="noopener noreferrer">
+      <div class="card action-card shadow-sm h-100 bg-white">
+        <div class="card-body p-4 text-center">
+          <div class="etq-icon bg-light text-muted mb-3 fs-3">
+            <i class="bi bi-file-earmark-text"></i>
+          </div>
+          <h6 class="fw-bold text-dark mb-1">Etiqueta A4</h6>
+          <p class="text-muted small mb-0">Layout em 3 colunas para impressoras comuns</p>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- QR Code -->
+  <div class="col-md-4 col-sm-6">
+    <a href="{{ url_for('parts.etiquetas_pdf', modelo='qrcode', id=part.id if part else None) }}" class="text-decoration-none text-reset" target="_blank" rel="noopener noreferrer">
+      <div class="card action-card shadow-sm h-100 bg-white">
+        <div class="card-body p-4 text-center">
+          <div class="etq-icon bg-light text-muted mb-3 fs-3">
+            <i class="bi bi-qr-code"></i>
+          </div>
+          <h6 class="fw-bold text-dark mb-1">Etiqueta QR Code</h6>
+          <p class="text-muted small mb-0">Foco em escaneamento e rastreio digital rápido</p>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Código de Barras -->
+  <div class="col-md-4 col-sm-6">
+    <a href="{{ url_for('parts.etiquetas_pdf', modelo='barcode', id=part.id if part else None) }}" class="text-decoration-none text-reset" target="_blank" rel="noopener noreferrer">
+      <div class="card action-card shadow-sm h-100 bg-white">
+        <div class="card-body p-4 text-center">
+          <div class="etq-icon bg-light text-muted mb-3 fs-3">
+            <i class="bi bi-upc-scan"></i>
+          </div>
+          <h6 class="fw-bold text-dark mb-1">Código de Barras</h6>
+          <p class="text-muted small mb-0">Padrão Code128 compatível com leitores físicos</p>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Completa -->
+  <div class="col-md-4 col-sm-6">
+    <a href="{{ url_for('parts.etiquetas_pdf', modelo='completo', id=part.id if part else None) }}" class="text-decoration-none text-reset" target="_blank" rel="noopener noreferrer">
+      <div class="card action-card shadow-sm h-100 bg-white">
+        <div class="card-body p-4 text-center">
+          <div class="etq-icon bg-light text-muted mb-3 fs-3">
+            <i class="bi bi-layers"></i>
+          </div>
+          <h6 class="fw-bold text-dark mb-1">Etiqueta Completa</h6>
+          <p class="text-muted small mb-0">Exibe QR Code, Código de Barras e Dados da Peça</p>
+        </div>
+      </div>
+    </a>
+  </div>
+
+</div>
+{% endblock %}

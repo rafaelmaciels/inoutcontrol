@@ -1,0 +1,8 @@
+sqlite3 inoutcontrol.db
+
+
+ALTER TABLE users ADD COLUMN codigo TEXT;
+
+
+UPDATE users SET codigo = '1020' WHERE id = 1;
+UPDATE users SET codigo = '1234' WHERE id = 2;

@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Usuários - StockControl{% endblock %}
+
+{% block content %}
+<!-- Estilos específicos unificados com a nova identidade visual -->
+<style>
+  .action-card {
+    transition: all 0.25s ease;
+    border: 1px solid rgba(0,0,0,0.08) !important;
+  }
+  .action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.08) !important;
+  }
+  .table-clean th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    background-color: #f8f9fa !important;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6 !important;
+  }
+</style>
+
+<!-- Cabeçalho Principal -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+  <div>
+    <h1 class="fw-bold mb-0 text-dark"><i class="bi bi-people text-secondary"></i> Usuários</h1>
+    <p class="text-muted small mb-0">Gerenciamento de operadores e permissões de acesso</p>
+  </div>
+  
+  <!-- Ações Unificadas (Menu Limpo) -->
+  <div class="d-flex gap-2 mt-3 mt-md-0">
+    <div class="dropdown">
+      <button class="btn btn-dark dropdown-toggle" type="button" id="dropdownAcoesUsers" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-grid-3x3-gap-fill"></i> Ações
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end shadow">
+        <li>
+          <a class="dropdown-item text-primary fw-bold" href="{{ url_for('users.create_user') }}">
+            <i class="bi bi-plus-circle me-2"></i> Novo usuário
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Seção Operacional Superior (Busca + Resumo) -->
+<div class="row g-3 mb-4">
+  <!-- Card de Busca Rápida -->
+  <div class="col-md-7">
+    <div class="card action-card shadow-sm bg-white h-100 border-0">
+      <div class="card-body d-flex flex-column justify-content-center py-3">
+        <span class="text-uppercase text-muted tracking-wider small mb-2 d-block">Filtro de Cadastro</span>
+        <form class="d-flex" method="get">
+          <input type="text" class="form-control me-2" name="q" placeholder="Buscar por nome, código ou e-mail..." value="{{ termo }}">
+          <button class="btn btn-secondary px-3"><i class="bi bi-search"></i></button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card Indicador Clean -->
+  <div class="col-md-5">
+    <div class="card action-card shadow-sm bg-light h-100 border-0">
+      <div class="card-body d-flex align-items-center justify-content-between py-3">
+        <div>
+          <span class="text-uppercase text-muted tracking-wider small d-block">Base de Usuários</span>
+          <h5 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-person-check text-secondary me-1"></i> {{ users.total }} Operadores
+          </h5>
+        </div>
+          <i class="bi bi-people-fill fs-1 opacity-25 text-secondary"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabela de Usuários Clean -->
+<div class="table-responsive">
+  <table class="table table-hover table-clean shadow-sm bg-white align-middle border">
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Nome</th>
+        <th>E-mail</th>
+        <th>Telefone</th>
+        <th>Função</th>
+        <th class="text-end" style="width: 120px;">Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in users.items %}
+      <tr>
+        <td class="text-secondary fw-mono small">{{ user.codigo }}</td>
+        <td><span class="fw-bold text-dark">{{ user.nome }}</span></td>
+        <td class="text-muted">{{ user.email }}</td>
+        <td class="text-muted small">{{ user.telefone or '-' }}</td>
+        <td>
+          <span class="badge bg-light text-dark border px-2.5">{{ user.funcao or 'Operador' }}</span>
+        </td>
+        <td class="text-end">
+          <div class="btn-group">
+            <a href="{{ url_for('users.edit_user', id=user.id) }}" class="btn btn-sm btn-outline-secondary border-0">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-danger border-0" data-bs-toggle="modal" data-bs-target="#modalExcluir{{ user.id }}">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+
+      <!-- Modal de exclusão -->
+      <div class="modal fade" id="modalExcluir{{ user.id }}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+              <h5 class="modal-title"><i class="bi bi-exclamation-triangle text-warning"></i> Confirmar exclusão</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              Tem certeza que deseja excluir o usuário <strong>{{ user.nome }}</strong>?<br>
+              Esta ação removerá os acessos associados e não poderá ser desfeita.
+            </div>
+            <div class="modal-footer d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-outline-secondary flex-fill flex-md-grow-0" data-bs-dismiss="modal">
+                Cancelar
+              </button>
+              <a href="{{ url_for('users.delete_user', id=user.id) }}" class="btn btn-danger flex-fill flex-md-grow-0">
+                <i class="bi bi-trash"></i> Excluir Usuário
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <tr>
+        <td colspan="6" class="text-center py-4 text-muted">
+          <i class="bi bi-person-x d-block fs-3 mb-2"></i> Nenhum usuário localizado com os critérios fornecidos.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Componente de Paginação Dinâmica -->
+{% set data = users %}
+{% include "components/pagination.html" %}
+
+{% endblock %}

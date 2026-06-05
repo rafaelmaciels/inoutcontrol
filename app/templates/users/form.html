@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}InOutControl — Usuários{% endblock %}
+
+{% block content %}
+<!-- Estilos específicos para unificação estética -->
+<style>
+  .form-clean-card {
+    border: 1px solid rgba(0,0,0,0.08) !important;
+    background-color: #ffffff;
+  }
+  .info-alert-clean {
+    border-left: 4px solid #0d6efd !important;
+    background-color: #f8fafc;
+  }
+  .form-label-clean {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #475569;
+  }
+  .form-control:focus {
+    border-color: #94a3b8 !important;
+    box-shadow: none !important;
+  }
+</style>
+
+<!-- Cabeçalho Principal -->
+<div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+  <div>
+    <h1 class="fw-bold mb-0 text-dark">
+      <i class="bi bi-person-gear text-secondary"></i> 
+      {% if user %}Editar Usuário{% else %}Novo Usuário{% endif %}
+    </h1>
+    <p class="text-muted small mb-0">Preencha as credenciais e o nível de acesso do operador no sistema</p>
+  </div>
+  <a href="{{ url_for('users.list_users') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Voltar à listagem
+  </a>
+</div>
+
+<!-- Bloco Informativo de Diretrizes -->
+<div class="card info-alert-clean shadow-sm border-0 mb-4 rounded-3">
+  <div class="card-body py-3">
+    <h6 class="fw-bold text-primary mb-1 d-flex align-items-center gap-2">
+      <i class="bi bi-info-circle-fill"></i> Diretrizes de Cadastro
+    </h6>
+    <p class="mb-0 text-muted small">
+      Certifique-se de definir um <strong>código único</strong> e um <strong>e-mail exclusivo</strong> para este operador. 
+      O número de telefone deve obrigatoriamente seguir o padrão com DDD: <code class="text-dark fw-bold">(83) 99999-9999</code>.
+    </p>
+  </div>
+</div>
+
+<!-- Card Central do Formulário -->
+<div class="card form-clean-card shadow-sm rounded-3">
+  <div class="card-body p-4">
+    
+    <form method="POST">
+      <div class="row g-3">
+        
+        <!-- Código do Usuário -->
+        <div class="col-md-6">
+          <label class="form-label form-label-clean fw-bold">Código Identificador</label>
+          <input type="text" name="codigo" class="form-control"
+                 value="{{ user.codigo if user else '' }}"
+                 placeholder="Ex: U001" required>
+          <div class="form-text text-muted" style="font-size: 0.75rem;">Este código será a chave de busca do operador.</div>
+        </div>
+
+        <!-- Nome Completo -->
+        <div class="col-md-6">
+          <label class="form-label form-label-clean fw-bold">Nome Completo</label>
+          <input type="text" name="nome" class="form-control"
+                 value="{{ user.nome if user else '' }}"
+                 placeholder="Ex: João da Silva" required>
+        </div>
+
+        <!-- Endereço de E-mail -->
+        <div class="col-md-6">
+          <label class="form-label form-label-clean fw-bold">E-mail Corporativo</label>
+          <input type="email" name="email" class="form-control"
+                 value="{{ user.email if user else '' }}"
+                 placeholder="Ex: joao.silva@email.com" required>
+        </div>
+
+        <!-- Telefone / Contato -->
+        <div class="col-md-6">
+          <label class="form-label form-label-clean fw-bold">Telefone de Contato</label>
+          <input type="text" name="telefone" id="telefone" maxlength="15"
+                 class="form-control"
+                 value="{{ user.telefone if user else '' }}"
+                 placeholder="Ex: (83) 99999-9999" required>
+        </div>
+
+        <!-- Função / Cargo Operacional -->
+        <div class="col-md-12">
+          <label class="form-label form-label-clean fw-bold">Função no Sistema</label>
+          <input type="text" name="funcao" class="form-control"
+                 value="{{ user.funcao if user else '' }}"
+                 placeholder="Ex: Administrador, Técnico, Estoquista" required>
+          <div class="form-text text-muted" style="font-size: 0.75rem;">Determina o escopo de atuação do usuário nas movimentações.</div>
+        </div>
+        
+      </div>
+
+      <!-- Barra de Ações Inferior -->
+      <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+        <a href="{{ url_for('users.list_users') }}" class="btn btn-light border px-3">
+          Cancelar
+        </a>
+        <button type="submit" class="btn btn-dark px-4">
+          <i class="bi bi-check-circle me-1"></i> Salvar Registro
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+</div>
+{% endblock %}
