@@ -13,6 +13,7 @@ class User(db.Model):
     funcao = db.Column(db.String(100), nullable=False)
 
     movements = db.relationship("Movement", back_populates="user")
+    notes = db.relationship("Note", back_populates="user")  # Relacionamento com as notas
 
     def __repr__(self):
         return f"<User {self.codigo} - {self.nome}>"
@@ -57,3 +58,19 @@ class Movement(db.Model):
 
     def __repr__(self):
         return f"<Movement {self.tipo} - {self.part.nome}>"
+
+# ============================ # NOVO MODELO DE NOTAS # ============================
+class Note(db.Model):
+    __tablename__ = "notes"
+
+    id = db.Column(db.Integer, primary_key=True)
+    titulo = db.Column(db.String(120), nullable=False)
+    conteudo = db.Column(db.Text, nullable=False)
+    data_criacao = db.Column(db.DateTime, default=datetime.now)
+
+    # Relacionamento opcional com o Usuário que criou a anotação
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    user = db.relationship("User", back_populates="notes")
+
+    def __repr__(self):
+        return f"<Note {self.titulo}>"

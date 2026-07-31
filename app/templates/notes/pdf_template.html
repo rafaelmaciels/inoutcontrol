@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Anotações e Recados</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 1.5cm;
+    }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      color: #1e293b;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .header {
+      border-bottom: 2px solid #cbd5e1;
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 20px;
+      color: #0f172a;
+    }
+    .header p {
+      margin: 2px 0 0 0;
+      color: #64748b;
+      font-size: 11px;
+    }
+    .note-card {
+      border: 1px solid #e2e8f0;
+      background-color: #f8fafc;
+      border-radius: 6px;
+      padding: 12px 15px;
+      margin-bottom: 12px;
+      page-break-inside: avoid; /* Evita que uma nota seja cortada entre páginas */
+    }
+    .note-header {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+    }
+    .note-title {
+      font-weight: bold;
+      font-size: 13px;
+      color: #0f172a;
+    }
+    .note-date {
+      color: #64748b;
+      font-size: 10px;
+    }
+    .note-body {
+      white-space: pre-wrap;
+      color: #334155;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Relatório de Anotações & Recados</h1>
+    <p>Gerado em pelo sistema StockControl</p>
+  </div>
+
+  {% for note in notes %}
+  <div class="note-card">
+    <div class="note-header">
+      <span class="note-title">{{ note.titulo if note.titulo else 'Sem título' }}</span>
+      <span class="note-date">{{ note.data_criacao.strftime('%d/%m/%Y %H:%M') if note.data_criacao else '' }}</span>
+    </div>
+    <div class="note-body">{{ note.conteudo if note.conteudo else (note.observacao if note.observacao else '') }}</div>
+  </div>
+  {% else %}
+  <p style="text-align: center; color: #64748b; margin-top: 30px;">Nenhuma anotação localizada.</p>
+  {% endfor %}
+
+</body>
+</html>

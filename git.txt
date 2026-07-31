@@ -1,0 +1,8 @@
+# Remove todos os arquivos do rastreamento do Git
+git rm -r --cached .
+
+# Adiciona tudo novamente (agora respeitando o .gitignore)
+git add .
+
+# Faz o commit da limpeza
+git commit -m "fix: adiciona .gitignore e remove arquivos desnecessarios do rastreamento"

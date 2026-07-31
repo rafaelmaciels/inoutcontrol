@@ -107,6 +107,12 @@
             <i class="bi bi-arrow-left-right"></i> Movimentações
           </a>
         </li>
+        <!-- ABA DE NOTAS / OBSERVAÇÕES ADICIONADA AQUI -->
+        <li class="nav-item">
+          <a class="nav-link nav-link-clean" href="{{ url_for('notes.list_notes') }}">
+            <i class="bi bi-journal-text"></i> Notas
+          </a>
+        </li>
         <li class="nav-item">
           <a class="nav-link nav-link-clean" href="{{ url_for('backup.backup_form') }}">
             <i class="bi bi-hdd"></i> Backup

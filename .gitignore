@@ -1,0 +1,38 @@
+# Byte-compiled / Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Banco de dados local (SQLite)
+*.db
+*.sqlite
+*.sqlite3
+
+# Arquivos temporários e backups de código (.old, .bak, .ok)
+*.old
+*.bak
+*.ok
+
+# Uploads de usuários (mantém a pasta, mas ignora os arquivos salvos nela)
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+
+# Ambientes virtuais
+venv/
+.venv/
+env/
+ENV/
+
+# Configurações locais / Variáveis de ambiente
+.env
+.env.local
+
+# IDEs e Editores de código
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Arquivos do Sistema Operacional
+.DS_Store
+Thumbs.db

@@ -11,6 +11,7 @@ from .users.routes import users_bp
 from .parts.routes import parts_bp
 from .movements.routes import movements_bp  # Adicionado .routes para manter o padrão
 from .backup.routes import backup_bp        # Adicionado .routes para manter o padrão
+from .notes.routes import notes_bp          # <-- ADICIONADO: Import do blueprint de notas
 
 def create_app():
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -33,7 +34,8 @@ def create_app():
     app.register_blueprint(parts_bp, url_prefix="/pecas")
     app.register_blueprint(movements_bp, url_prefix="/movimentacoes")
     app.register_blueprint(backup_bp, url_prefix="/backup")
-    
+    app.register_blueprint(notes_bp, url_prefix="/notas")  # <-- ADICIONADO: Registro do blueprint
+
     # =========================================================================
     # FILTRO CUSTOMIZADO: Formatação de Moeda Brasileira (R$ 103.926,00)
     # =========================================================================

@@ -1,7 +1,7 @@
 from flask import render_template
 from sqlalchemy import func
 from app.dashboard import dashboard_bp
-from app.models import Movement, Part, User
+from app.models import Movement, Part, User, Note  # 1. Importe o model Note aqui
 
 @dashboard_bp.route("/")
 def index():
@@ -23,6 +23,7 @@ def index():
     total_usuarios = User.query.count()
     total_pecas = Part.query.count()
     total_movimentacoes = Movement.query.count()
+    total_notas = Note.query.count()  # 2. Faz a contagem no banco de dados
 
     # Baixo estoque — apenas peças realmente críticas (<= 2 unidades)
     baixo_estoque = (
@@ -54,6 +55,7 @@ def index():
         total_usuarios=total_usuarios,
         total_pecas=total_pecas,
         total_movimentacoes=total_movimentacoes,
+        total_notas=total_notas,  # 3. Envia para o HTML
         baixo_estoque=baixo_estoque,
         chart_labels=labels,
         chart_values=valores,

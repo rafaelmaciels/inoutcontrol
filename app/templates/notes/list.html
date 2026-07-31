@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}Bloco de Notas - StockControl{% endblock %}
+
+{% block content %}
+<style>
+  .action-card {
+    transition: all 0.25s ease;
+    border: 1px solid rgba(0,0,0,0.08) !important;
+  }
+  .note-card {
+    transition: all 0.2s ease;
+    border: 1px solid rgba(0,0,0,0.08) !important;
+  }
+  .note-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.08) !important;
+  }
+  .note-content {
+    white-space: pre-wrap; /* Preserva quebras de linha */
+    color: #4b5563;
+    font-size: 0.9rem;
+  }
+</style>
+
+<!-- Cabeçalho Principal -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+  <div>
+    <h1 class="fw-bold mb-0 text-dark">
+      <i class="bi bi-sticky text-secondary"></i> Bloco de Notas & Recados
+    </h1>
+    <p class="text-muted small mb-0">Lembretes, observações e anotações rápidas do sistema</p>
+  </div>
+  
+  <!-- Ações Unificadas (Menu Limpo) -->
+  <div class="d-flex gap-2 mt-3 mt-md-0">
+    <div class="dropdown">
+      <button class="btn btn-dark dropdown-toggle" type="button" id="dropdownAcoesNotes" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-grid-3x3-gap-fill"></i> Ações
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end shadow">
+        <li>
+          <a class="dropdown-item text-primary fw-bold" href="{{ url_for('notes.form_note') }}">
+            <i class="bi bi-plus-circle me-2"></i> Nova Anotação
+          </a>
+        </li>
+        <li><hr class="dropdown-divider my-1"></li>
+        <li>
+          <a class="dropdown-item d-flex align-items-center py-2" href="{{ url_for('notes.export_pdf', q=termo if termo is defined else '') }}" target="_blank">
+            <i class="bi bi-file-earmark-pdf me-2 text-danger"></i> Exportar para PDF
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Seção Operacional Superior (Busca + Totalizador) -->
+<div class="row g-3 mb-4">
+  <!-- Card de Busca Rápida -->
+  <div class="col-md-8">
+    <div class="card action-card shadow-sm bg-white h-100 border-0">
+      <div class="card-body d-flex flex-column justify-content-center py-3">
+        <span class="text-uppercase text-muted tracking-wider small mb-2 d-block" style="font-size: 0.75rem; font-weight:600;">Pesquisa de Anotações</span>
+        <form class="d-flex" method="get" action="{{ url_for('notes.list_notes') }}">
+          <input type="text" class="form-control me-2" name="q" placeholder="Buscar por título ou palavra-chave..." value="{{ termo if termo is defined else '' }}">
+          <button type="submit" class="btn btn-secondary px-3"><i class="bi bi-search"></i></button>
+          {% if termo %}
+            <a href="{{ url_for('notes.list_notes') }}" class="btn btn-outline-secondary ms-2" title="Limpar busca">
+              <i class="bi bi-x-lg"></i>
+            </a>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card Indicador Clean de Total -->
+  <div class="col-md-4">
+    <div class="card action-card shadow-sm bg-light h-100 border-0">
+      <div class="card-body d-flex align-items-center justify-content-between py-3">
+        <div>
+          <span class="text-uppercase text-muted tracking-wider small d-block" style="font-size: 0.75rem; font-weight:600;">Total Encontrado</span>
+          <h5 class="fw-bold mb-0 text-dark mt-1">
+            <i class="bi bi-journal-text text-secondary me-1"></i> {{ notes.total if notes.total is defined else notes|length }} Notas
+          </h5>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Grid de Anotações -->
+<div class="row g-3">
+  {% for note in (notes.items if notes.items is defined else notes) %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card note-card shadow-sm bg-white h-100 border-0 d-flex flex-column">
+      <div class="card-body p-4 d-flex flex-column">
+        
+        <!-- Título e Data -->
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <h5 class="fw-bold text-dark mb-0 text-truncate" style="max-width: 70%;">
+            {{ note.titulo if note.titulo else 'Sem título' }}
+          </h5>
+          <span class="badge bg-light text-muted border small fw-normal">
+            {{ note.data_criacao.strftime('%d/%m/%Y') if note.data_criacao else '' }}
+          </span>
+        </div>
+
+        <hr class="my-2 opacity-25">
+
+        <!-- Texto da Anotação -->
+        <div class="note-content flex-grow-1 my-2">
+          {{ note.conteudo if note.conteudo else (note.observacao if note.observacao else 'Nenhum texto informado.') }}
+        </div>
+
+        <!-- Ações do Card -->
+        <div class="d-flex justify-content-end gap-1 pt-2 border-top mt-3">
+          <a href="{{ url_for('notes.form_note', id=note.id) }}" class="btn btn-sm btn-outline-secondary border-0" title="Editar">
+            <i class="bi bi-pencil"></i> Editar
+          </a>
+          <button type="button" class="btn btn-sm btn-outline-danger border-0" data-bs-toggle="modal" data-bs-target="#modalExcluir{{ note.id }}" title="Excluir">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Exclusão -->
+  <div class="modal fade" id="modalExcluir{{ note.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-dark text-white">
+          <h5 class="modal-title"><i class="bi bi-exclamation-triangle text-warning me-1"></i> Confirmar Exclusão</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          Tem certeza que deseja excluir esta anotação?<br>
+          <strong>"{{ note.titulo if note.titulo else 'Anotação sem título' }}"</strong>
+        </div>
+        <div class="modal-footer d-flex flex-wrap gap-2">
+          <button type="button" class="btn btn-outline-secondary flex-fill flex-md-grow-0" data-bs-dismiss="modal">
+            Cancelar
+          </button>
+          <form action="{{ url_for('notes.delete_note', id=note.id) }}" method="POST" class="d-inline flex-fill flex-md-grow-0">
+            <button type="submit" class="btn btn-danger w-100">
+              <i class="bi bi-trash"></i> Excluir
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="col-12">
+    <div class="text-center py-5 bg-white rounded border shadow-sm">
+      <i class="bi bi-journal-x d-block fs-1 text-muted mb-2"></i>
+      <h6 class="fw-bold text-dark">Nenhuma anotação localizada</h6>
+      <p class="text-muted small mb-3">
+        {% if termo %}
+          Não encontramos resultados para a busca "{{ termo }}".
+        {% else %}
+          Utilize o menu de ações para registrar um novo lembrete ou recado.
+        {% endif %}
+      </p>
+      <a href="{{ url_for('notes.form_note') }}" class="btn btn-sm btn-dark">
+        <i class="bi bi-plus-circle me-1"></i> Criar Primeira Anotação
+      </a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Componente Reutilizável de Paginação -->
+{% if notes.pages is defined and notes.pages > 1 %}
+  <div class="mt-4">
+    {% set data = notes %}
+    {% include "components/pagination.html" %}
+  </div>
+{% endif %}
+
+{% endblock %}

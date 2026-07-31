@@ -47,7 +47,7 @@
 <div class="row g-3 mb-4">
 
   <!-- Usuários -->
-  <div class="col-md-4">
+  <div class="col-md-3">
     <a href="{{ url_for('users.list_users') }}" class="card action-card shadow-sm bg-white h-100">
       <div class="card-body d-flex align-items-center justify-content-between py-3">
         <div>
@@ -61,7 +61,7 @@
   </div>
 
   <!-- Peças -->
-  <div class="col-md-4">
+  <div class="col-md-3">
     <a href="{{ url_for('parts.list_parts') }}" class="card action-card shadow-sm bg-white h-100">
       <div class="card-body d-flex align-items-center justify-content-between py-3">
         <div>
@@ -75,7 +75,7 @@
   </div>
 
   <!-- Movimentações -->
-  <div class="col-md-4">
+  <div class="col-md-3">
     <a href="{{ url_for('movements.list_movements') }}" class="card action-card shadow-sm bg-white h-100">
       <div class="card-body d-flex align-items-center justify-content-between py-3">
         <div>
@@ -87,6 +87,21 @@
       </div>
     </a>
   </div>
+
+  <!-- Notas / Observações (NOVO CARD) -->
+  <div class="col-md-3">
+    <a href="{{ url_for('notes.list_notes') }}" class="card action-card shadow-sm bg-white h-100">
+      <div class="card-body d-flex align-items-center justify-content-between py-3">
+        <div>
+          <span class="text-uppercase text-muted tracking-wider small d-block">Anotações</span>
+          <h3 class="fw-bold mb-0 text-dark">{{ total_notas|default('0') }}</h3>
+          <small class="text-info"><i class="bi bi-arrow-right-short"></i> Ver Observações</small>
+        </div>
+        <i class="bi bi-journal-text text-info fs-1 opacity-25"></i>
+      </div>
+    </a>
+  </div>
+
 </div>
 
 <!-- ============================ # GRÁFICO + BAIXO ESTOQUE # ============================ -->
