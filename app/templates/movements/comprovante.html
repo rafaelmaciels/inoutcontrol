@@ -1,41 +1,278 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<title>InOutControl — Comprovante de Movimentação</title>
-<style>
-  body { font-family: Arial, sans-serif; margin: 40px; }
-  h2 { text-align: center; margin-bottom: 20px; }
-  .box { 
-    border: 1px solid #333; 
-    padding: 20px; 
-    border-radius: 8px; /* bordas arredondadas */
-  }
-  p { margin: 6px 0; }
-  strong { color: #222; }
-</style>
+  <meta charset="utf-8">
+  <title>InOutControl — Comprovante de Movimentação #{{ mov.id }}</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 15mm 20mm;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      color: #1e293b;
+      background-color: #ffffff;
+    }
+
+    .voucher-card {
+      max-width: 680px;
+      margin: 0 auto;
+      border: 2px solid #0f172a;
+      border-radius: 8px;
+      padding: 24px;
+      background-color: #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .voucher-header {
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 12px;
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .voucher-brand h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+      color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: -0.5px;
+    }
+
+    .voucher-brand p {
+      margin: 2px 0 0 0;
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .voucher-badge {
+      background-color: #0f172a;
+      color: #ffffff;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .voucher-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 18px;
+      margin-bottom: 18px;
+    }
+
+    .voucher-field {
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 6px;
+    }
+
+    .voucher-field.full-width {
+      grid-column: span 2;
+    }
+
+    .field-label {
+      font-size: 9.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #64748b;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .field-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .field-value.highlight {
+      font-size: 15px;
+      color: #2563eb;
+      font-family: 'Courier New', Courier, monospace;
+    }
+
+    .badge-status {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge-open {
+      background-color: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    .badge-closed {
+      background-color: #dcfce7;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
+    .observation-box {
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 11.5px;
+      color: #334155;
+      min-height: 48px;
+      white-space: pre-wrap;
+    }
+
+    .signature-section {
+      margin-top: 40px;
+      padding-top: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+
+    .signature-line {
+      border-top: 1px solid #94a3b8;
+      text-align: center;
+      padding-top: 6px;
+      font-size: 10px;
+      color: #64748b;
+    }
+
+    .signature-line strong {
+      display: block;
+      color: #0f172a;
+      font-size: 11px;
+      margin-bottom: 2px;
+    }
+
+    .voucher-footer {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 9px;
+      color: #94a3b8;
+      border-top: 1px dashed #e2e8f0;
+      padding-top: 10px;
+    }
+
+    @media print {
+      body {
+        padding: 0;
+      }
+      .voucher-card {
+        border-color: #000000;
+        box-shadow: none;
+      }
+    }
+  </style>
 </head>
 <body>
 
-<h2>InOutControl — Comprovante de Movimentação</h2>
+<div class="voucher-card">
+  <div class="voucher-header">
+    <div class="voucher-brand">
+      <h1>InOutControl</h1>
+      <p>Comprovante de Movimentação de Estoque</p>
+    </div>
+    <div class="voucher-badge">
+      Registro #{{ mov.id }}
+    </div>
+  </div>
 
-<div class="box">
-  <p><strong>ID:</strong> {{ mov.id }}</p>
-  <p><strong>Usuário:</strong> {{ mov.user.nome }}</p>
-  <p><strong>Peça:</strong> {{ mov.part.nome }}</p>
-  <p><strong>Quantidade:</strong> {{ mov.quantidade }}</p>
-  <p><strong>Retirada:</strong> {{ mov.data_hora.strftime('%d/%m/%Y %H:%M') }}</p>
+  <div class="voucher-grid">
+    <div class="voucher-field">
+      <div class="field-label">Colaborador / Solicitante</div>
+      <div class="field-value">{{ mov.user.nome }}</div>
+      <small style="color: #64748b; font-size: 9.5px;">Cód. Usuário: {{ mov.user.codigo }}</small>
+    </div>
 
-  {% if mov.data_devolucao %}
-    <p><strong>Devolução:</strong> {{ mov.data_devolucao.strftime('%d/%m/%Y %H:%M') }}</p>
-    <p><strong>Devolvido por:</strong> {{ mov.devolvido_por }}</p>
-  {% endif %}
+    <div class="voucher-field">
+      <div class="field-label">Status da Movimentação</div>
+      <div>
+        {% if mov.emprestimo_aberto %}
+          <span class="badge-status badge-open">Em Aberto (Empréstimo)</span>
+        {% else %}
+          <span class="badge-status badge-closed">Concluído / Devolvido</span>
+        {% endif %}
+      </div>
+    </div>
 
-  <p><strong>Observação:</strong> {{ mov.observacao or '-' }}</p>
+    <div class="voucher-field">
+      <div class="field-label">Item / Peça</div>
+      <div class="field-value">{{ mov.part.nome }}</div>
+      {% if mov.part.brand %}
+        <small style="color: #64748b; font-size: 9.5px;">Marca: {{ mov.part.brand.nome }}</small>
+      {% endif %}
+    </div>
+
+    <div class="voucher-field">
+      <div class="field-label">Quantidade Movimentada</div>
+      <div class="field-value highlight">{{ mov.quantidade }} un.</div>
+    </div>
+
+    <div class="voucher-field">
+      <div class="field-label">Data e Hora da Retirada</div>
+      <div class="field-value font-mono">{{ mov.data_hora.strftime('%d/%m/%Y às %H:%M') }}</div>
+    </div>
+
+    <div class="voucher-field">
+      <div class="field-label">Data e Hora da Devolução</div>
+      <div class="field-value font-mono">
+        {% if mov.data_devolucao %}
+          {{ mov.data_devolucao.strftime('%d/%m/%Y às %H:%M') }}
+        {% else %}
+          <span style="color: #94a3b8; font-weight: normal;">Pendente</span>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if mov.devolvido_por %}
+    <div class="voucher-field full-width">
+      <div class="field-label">Devolução Recebida Por</div>
+      <div class="field-value">{{ mov.devolvido_por }}</div>
+    </div>
+    {% endif %}
+
+    <div class="voucher-field full-width">
+      <div class="field-label">Observações / Histórico</div>
+      <div class="observation-box">{{ mov.observacao or 'Nenhuma observação registrada.' }}</div>
+    </div>
+  </div>
+
+  <div class="signature-section">
+    <div class="signature-line">
+      <strong>{{ mov.user.nome }}</strong>
+      Assinatura do Solicitante
+    </div>
+    <div class="signature-line">
+      <strong>Responsável pelo Almoxarifado</strong>
+      Visto do Operador
+    </div>
+  </div>
+
+  <div class="voucher-footer">
+    Comprovante emitido eletronicamente via sistema InOutControl em {{ mov.data_hora.strftime('%d/%m/%Y') }}.
+  </div>
 </div>
 
 <script>
-  window.print()
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => { window.print(); }, 250);
+  });
 </script>
 
 </body>

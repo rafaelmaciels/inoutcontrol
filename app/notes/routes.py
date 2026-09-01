@@ -72,8 +72,11 @@ def export_pdf():
         
     notes = query.order_by(Note.data_criacao.desc()).all()
     
+    from datetime import datetime
+    data_emissao = datetime.now().strftime('%d/%m/%Y %H:%M')
+    
     # Renderiza o template HTML para o PDF
-    rendered_html = render_template('notes/pdf_template.html', notes=notes)
+    rendered_html = render_template('notes/pdf_template.html', notes=notes, termo=termo, data_emissao=data_emissao)
     
     return render_pdf_response(
         html_content=rendered_html,

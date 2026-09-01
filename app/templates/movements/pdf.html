@@ -1,115 +1,87 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>InOutControl — Relatório de Movimentações</title>
-<style>
-  @page {
-    size: A4 portrait;
-    margin: 15mm;
-  }
-  body {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    margin: 20px;
-    color: #1e293b;
-    background: #ffffff;
-    -webkit-print-color-adjust: exact;
-  }
-  .header {
-    text-align: center;
-    margin-bottom: 25px;
-    border-bottom: 2px solid #0f172a;
-    padding-bottom: 12px;
-  }
-  .header h1 {
-    margin: 0;
-    font-size: 24px;
-    color: #0f172a;
-    letter-spacing: 1px;
-  }
-  .header h2 {
-    margin: 5px 0 0 0;
-    font-size: 15px;
-    font-weight: normal;
-    color: #64748b;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-    font-size: 12px;
-  }
-  th, td {
-    border: 1px solid #cbd5e1;
-    padding: 8px 10px;
-  }
-  th {
-    background-color: #f1f5f9;
-    font-weight: bold;
-    text-align: left;
-    color: #0f172a;
-  }
-  tr:nth-child(even) {
-    background-color: #f8fafc;
-  }
-  .footer {
-    margin-top: 30px;
-    text-align: center;
-    font-size: 11px;
-    color: #94a3b8;
-    border-top: 1px solid #e2e8f0;
-    padding-top: 10px;
-  }
-</style>
-</head>
-<body>
+{% extends "reports/base_report.html" %}
 
-<div class="header">
-    <h1>InOutControl</h1>
-    <h2>Relatório de Movimentações — Dia {{ dia }}</h2>
+{% block title %}InOutControl — Relatório de Movimentações ({{ dia }}){% endblock %}
+
+{% block report_title %}Relatório de Movimentações — Dia {{ dia }}{% endblock %}
+
+{% block box_header_meta %}
+<div class="box-header-info">
+  <div><strong>Data de Referência:</strong> {{ dia }}</div>
+  <div><strong>Emissão:</strong> {{ data_emissao if data_emissao is defined else dia }} &bull; <strong>Total de Registros:</strong> {{ movimentos|length }}</div>
 </div>
+{% endblock %}
 
-<table>
-<thead>
-<tr>
-    <th>Hora</th>
-    <th>Usuário</th>
-    <th>Peça</th>
-    <th style="text-align: center;">Qtd</th>
-    <th>Tipo</th>
-    <th>Status</th>
-</tr>
-</thead>
+{% block report_summary %}
+{% set total_qtd = movimentos|sum(attribute='quantidade') if movimentos else 0 %}
+{% set abertos = movimentos|selectattr('emprestimo_aberto', 'equalto', true)|list|length if movimentos else 0 %}
+{% set devolvidos = movimentos|selectattr('emprestimo_aberto', 'equalto', false)|list|length if movimentos else 0 %}
 
-<tbody>
-{% for mov in movimentos %}
-<tr>
-    <td style="font-family: monospace;">{{ mov.data_hora.strftime('%H:%M') }}</td>
-    <td><strong>{{ mov.user.nome }}</strong></td>
-    <td>{{ mov.part.nome }}</td>
-    <td style="text-align: center; font-weight: bold;">{{ mov.quantidade }}</td>
-    <td>
+<div class="summary-grid">
+  <div class="summary-item">
+    <div class="summary-label">Total de Movimentações</div>
+    <div class="summary-val">{{ movimentos|length }}</div>
+  </div>
+  <div class="summary-item">
+    <div class="summary-label">Volume de Peças</div>
+    <div class="summary-val">{{ total_qtd }} un.</div>
+  </div>
+  <div class="summary-item">
+    <div class="summary-label">Empréstimos em Aberto</div>
+    <div class="summary-val" style="color: #c00;">{{ abertos }}</div>
+  </div>
+  <div class="summary-item">
+    <div class="summary-label">Devoluções / Baixas</div>
+    <div class="summary-val" style="color: #166534;">{{ devolvidos }}</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block report_content %}
+{% if movimentos %}
+<table class="report-table">
+  <thead>
+    <tr>
+      <th style="width: 10%;">Hora</th>
+      <th style="width: 25%;">Usuário</th>
+      <th style="width: 35%;">Peça / Marca</th>
+      <th style="width: 10%; text-align: center;">Qtd</th>
+      <th style="width: 10%;">Tipo</th>
+      <th style="width: 10%; text-align: center;">Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for mov in movimentos %}
+    <tr>
+      <td class="font-mono">{{ mov.data_hora.strftime('%H:%M') }}</td>
+      <td><strong>{{ mov.user.nome }}</strong></td>
+      <td>
+        {{ mov.part.nome }}
+        {% if mov.part.brand %}
+          <span style="color: #666; font-size: 11px;">[{{ mov.part.brand.nome }}]</span>
+        {% endif %}
+      </td>
+      <td class="text-center font-bold">{{ mov.quantidade }}</td>
+      <td>
         {% if mov.tipo == 'saida' %}
-            Retirada
+          Retirada
         {% else %}
-            Entrada
+          Entrada
         {% endif %}
-    </td>
-    <td>
+      </td>
+      <td class="text-center">
         {% if mov.emprestimo_aberto %}
-            <span style="color: #dc3545; font-weight: bold;">Aberto</span>
+          <span class="status-open">Aberto</span>
         {% else %}
-            <span style="color: #16a34a;">Devolvido</span>
+          <span class="status-closed">Devolvido</span>
         {% endif %}
-    </td>
-</tr>
-{% endfor %}
-</tbody>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
 </table>
-
-<div class="footer">
-    Relatório gerado automaticamente pelo sistema InOutControl.
+{% else %}
+<div class="empty-state-box">
+  Nenhuma movimentação registrada na data selecionada ({{ dia }}).
 </div>
-
-</body>
-</html>
+{% endif %}
+{% endblock %}

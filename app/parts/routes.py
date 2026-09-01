@@ -295,9 +295,11 @@ def relatorio_pecas():
         query = query.filter(Part.quantidade <= 2)
 
     parts = query.all()
-    dia = datetime.now().strftime("%d-%m-%Y")
+    agora = datetime.now()
+    dia = agora.strftime("%d-%m-%Y")
+    data_emissao = agora.strftime("%d/%m/%Y %H:%M")
 
-    html = render_template("parts/relatorio_pecas.html", pecas=parts, dia=dia, filtro=filtro)
+    html = render_template("parts/relatorio_pecas.html", pecas=parts, dia=dia, data_emissao=data_emissao, filtro=filtro)
     return render_pdf_response(
         html_content=html,
         filename=f"relatorio_pecas_{filtro}_{dia}.pdf",

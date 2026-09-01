@@ -266,7 +266,8 @@ def pdf_movements(dia):
         Movement.data_hora < dia_fim
     ).order_by(Movement.data_hora.asc()).all()
 
-    html = render_template("movements/pdf.html", movimentos=movimentos, dia=dia)
+    data_emissao = datetime.now().strftime("%d/%m/%Y %H:%M")
+    html = render_template("movements/pdf.html", movimentos=movimentos, dia=dia, data_emissao=data_emissao)
     return render_pdf_response(
         html_content=html,
         filename=f"movimentacoes_{dia}.pdf",
@@ -314,11 +315,15 @@ def relatorio_mensal():
 
     labels = list(dias.keys())
     valores = list(dias.values())
+    total_mes = sum(valores)
+    total_dias_ativos = len(labels)
 
     return render_template(
         "movements/relatorio.html",
         labels=labels,
         valores=valores,
+        total_mes=total_mes,
+        total_dias_ativos=total_dias_ativos,
         ano=ano,
         mes=mes
     )

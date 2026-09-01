@@ -1,64 +1,79 @@
 {% extends "base.html" %}
-{% block title %}Relatório Mensal - StockControl{% endblock %}
+{% block title %}Relatório Mensal de Movimentações — InOutControl{% endblock %}
 
 {% block content %}
-<!-- Estilos específicos unificados com a identidade visual StockControl -->
+<!-- Estilos específicos unificados com a identidade visual InOutControl -->
 <style>
-  .action-card {
-    transition: all 0.25s ease;
-    border: 1px solid rgba(0,0,0,0.08) !important;
+  .report-action-card {
+    transition: all 0.2s ease;
+    border: 1px solid #e2e8f0 !important;
   }
-  .action-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.08) !important;
+  .report-action-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
   }
-  .form-control:focus, .form-select:focus {
-    border-color: #94a3b8 !important;
-    box-shadow: none !important;
-  }
-  .chart-container {
+  .chart-container-card {
     background: #ffffff;
-    border: 1px solid rgba(0,0,0,0.08);
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
-    padding: 24px;
+    padding: 20px;
+  }
+  .kpi-stat-card {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
   }
 </style>
 
 <!-- Cabeçalho Principal -->
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
   <div>
-    <h1 class="fw-bold mb-0 text-dark"><i class="bi bi-bar-chart text-secondary"></i> Relatório Mensal</h1>
-    <p class="text-muted small mb-0">Análise de fluxo e volume de movimentações de estoque</p>
+    <h1 class="h4 fw-bold mb-0 text-dark">
+      <i class="bi bi-bar-chart-fill text-primary me-2"></i> Relatório Mensal de Movimentações
+    </h1>
+    <p class="text-muted small mb-0">Análise analítica de fluxo e volume de movimentações do inventário</p>
+  </div>
+  <div class="d-flex gap-2 mt-2 mt-sm-0">
+    <a href="{{ url_for('movements.list_movements') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i> Voltar às Movimentações
+    </a>
   </div>
 </div>
 
 <!-- Seção Operacional Superior (Filtros de Período) -->
 <div class="row g-3 mb-4">
   <div class="col-12">
-    <div class="card action-card shadow-sm bg-white border-0">
+    <div class="card report-action-card shadow-sm bg-white rounded-3">
       <div class="card-body py-3">
-        <span class="text-uppercase text-muted tracking-wider small mb-2 d-block" style="font-size: 0.75rem; font-weight:600;">Parâmetros de Consulta</span>
+        <span class="text-uppercase text-muted small mb-2 d-block fw-semibold" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+          <i class="bi bi-calendar3 me-1"></i> Parâmetros de Consulta
+        </span>
         
         <form method="get" class="row g-2 align-items-end">
-          <div class="col-md-4">
+          <div class="col-md-4 col-sm-6">
             <label class="form-label small text-secondary fw-medium mb-1">Ano</label>
             <input type="number" class="form-control form-control-sm" name="ano" value="{{ ano }}" min="2000" max="2100" required>
           </div>
           
-          <div class="col-md-4">
-            <label class="form-label small text-secondary fw-medium mb-1">Mês</label>
+          <div class="col-md-5 col-sm-6">
+            <label class="form-label small text-secondary fw-medium mb-1">Mês de Referência</label>
             <select class="form-select form-select-sm" name="mes">
-              {% for m in range(1, 13) %}
-                <option value="{{ m }}" {% if m == mes %}selected{% endif %}>
-                  {% if m == 1 %}Janeiro{% elif m == 2 %}Fevereiro{% elif m == 3 %}Março{% elif m == 4 %}Abril{% elif m == 5 %}Maio{% elif m == 6 %}Junho{% elif m == 7 %}Julho{% elif m == 8 %}Agosto{% elif m == 9 %}Setembro{% elif m == 10 %}Outubro{% elif m == 11 %}Novembro{% elif m == 12 %}Dezembro{% endif %}
+              {% set meses = [
+                (1, 'Janeiro'), (2, 'Fevereiro'), (3, 'Março'), (4, 'Abril'),
+                (5, 'Maio'), (6, 'Junho'), (7, 'Julho'), (8, 'Agosto'),
+                (9, 'Setembro'), (10, 'Outubro'), (11, 'Novembro'), (12, 'Dezembro')
+              ] %}
+              {% for num, nome in meses %}
+                <option value="{{ num }}" {% if num == mes %}selected{% endif %}>
+                  {{ "%02d"|format(num) }} — {{ nome }}
                 </option>
               {% endfor %}
             </select>
           </div>
           
-          <div class="col-md-4">
-            <button class="btn btn-dark btn-sm w-100" type="submit">
-              <i class="bi bi-filter me-1"></i> Filtrar Gráfico
+          <div class="col-md-3 col-sm-12">
+            <button class="btn btn-dark btn-sm w-100 fw-medium" type="submit">
+              <i class="bi bi-filter me-1"></i> Filtrar Indicadores
             </button>
           </div>
         </form>
@@ -68,42 +83,88 @@
   </div>
 </div>
 
+<!-- Cards de KPIs do Mês -->
+{% set total_mes = valores|sum if valores else 0 %}
+{% set total_dias_ativos = labels|length if labels else 0 %}
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="kpi-stat-card shadow-sm">
+      <div class="text-uppercase text-muted small fw-semibold" style="font-size: 0.75rem;">Volume Total Movimentado</div>
+      <div class="h3 fw-bold text-dark mb-0 mt-1">{{ total_mes }} <small class="text-muted fs-6 fw-normal">unidades</small></div>
+      <small class="text-secondary" style="font-size: 0.8rem;">No mês de {{ "%02d"|format(mes) }}/{{ ano }}</small>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="kpi-stat-card shadow-sm">
+      <div class="text-uppercase text-muted small fw-semibold" style="font-size: 0.75rem;">Dias com Atividade</div>
+      <div class="h3 fw-bold text-primary mb-0 mt-1">{{ total_dias_ativos }} <small class="text-muted fs-6 fw-normal">dias</small></div>
+      <small class="text-secondary" style="font-size: 0.8rem;">Com registros de saída/entrada</small>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="kpi-stat-card shadow-sm">
+      <div class="text-uppercase text-muted small fw-semibold" style="font-size: 0.75rem;">Média por Dia Ativo</div>
+      <div class="h3 fw-bold text-success mb-0 mt-1">
+        {{ (total_mes / total_dias_ativos)|round(1) if total_dias_ativos > 0 else 0 }} <small class="text-muted fs-6 fw-normal">un./dia</small>
+      </div>
+      <small class="text-secondary" style="font-size: 0.8rem;">Média diária de consumo</small>
+    </div>
+  </div>
+</div>
+
 <!-- Área do Gráfico -->
-<div class="chart-container shadow-sm mb-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <span class="text-uppercase text-muted tracking-wider small" style="font-size: 0.75rem; font-weight:600;">Movimentações Diárias</span>
-    <span class="badge bg-light text-dark border fw-normal">Período: {{ "%02d"|format(mes) }}/{{ ano }}</span>
+<div class="chart-container-card shadow-sm mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+    <span class="text-uppercase text-muted fw-semibold small" style="font-size: 0.75rem;">
+      <i class="bi bi-graph-up me-1"></i> Fluxo Diário de Movimentações no Mês
+    </span>
+    <span class="badge bg-light text-dark border fw-medium px-2 py-1">
+      Competência: {{ "%02d"|format(mes) }}/{{ ano }}
+    </span>
   </div>
-  <div style="position: relative; width: 100%; height: 320px;">
-    <canvas id="grafico"></canvas>
-  </div>
+  
+  {% if valores and total_mes > 0 %}
+    <div style="position: relative; width: 100%; height: 340px;">
+      <canvas id="grafico"></canvas>
+    </div>
+  {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
+      <p class="mb-0 fw-medium">Nenhuma movimentação registrada no período {{ "%02d"|format(mes) }}/{{ ano }}.</p>
+      <small>Selecione outro mês ou ano no filtro acima para visualizar os dados.</small>
+    </div>
+  {% endif %}
 </div>
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
-<!-- Inclui a biblioteca Chart.js caso não esteja de forma global no base.html -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+{% if valores and total_mes > 0 %}
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById('grafico');
   if (!canvas) return;
 
-  // Renderização correta em contexto 2D
   const ctx = canvas.getContext('2d');
   
+  // Cria gradiente suave para as barras
+  const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+  gradient.addColorStop(0, '#3b82f6');
+  gradient.addColorStop(1, '#1e293b');
+
   new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: {{ labels|tojson if labels else [] }},
+      labels: {{ labels|map('string')|list|tojson }},
       datasets: [{
-        label: 'Unidades movimentadas',
-        data: {{ valores|tojson if valores else [] }},
-        backgroundColor: '#475569', 
-        hoverBackgroundColor: '#1e293b',
-        borderRadius: 4,
-        borderSkipped: false
+        label: 'Unidades Movimentadas',
+        data: {{ valores|tojson }},
+        backgroundColor: gradient,
+        hoverBackgroundColor: '#2563eb',
+        borderRadius: 6,
+        borderSkipped: false,
+        maxBarThickness: 32
       }]
     },
     options: {
@@ -114,14 +175,20 @@ document.addEventListener("DOMContentLoaded", () => {
           display: false 
         },
         tooltip: {
-          backgroundColor: '#1e293b',
+          backgroundColor: '#0f172a',
+          titleColor: '#ffffff',
+          bodyColor: '#e2e8f0',
           padding: 10,
-          titleFont: { size: 12, weight: '600' },
-          bodyFont: { size: 13 },
+          cornerRadius: 6,
+          titleFont: { size: 12, weight: '700' },
+          bodyFont: { size: 12 },
           displayColors: false,
           callbacks: {
+            title: function(context) {
+              return `Dia ${context[0].label}/{{ "%02d"|format(mes) }}/{{ ano }}`;
+            },
             label: function(context) {
-              return ` Qtd: ${context.raw} un.`;
+              return `Quantidade: ${context.raw} unidade(s)`;
             }
           }
         }
@@ -133,7 +200,13 @@ document.addEventListener("DOMContentLoaded", () => {
           },
           ticks: {
             color: '#64748b',
-            font: { size: 11, family: 'monospace' }
+            font: { size: 11, weight: '600' }
+          },
+          title: {
+            display: true,
+            text: 'Dias do Mês',
+            color: '#94a3b8',
+            font: { size: 11 }
           }
         },
         y: {
@@ -143,7 +216,14 @@ document.addEventListener("DOMContentLoaded", () => {
           ticks: {
             color: '#64748b',
             font: { size: 11 },
+            stepSize: 1,
             beginAtZero: true
+          },
+          title: {
+            display: true,
+            text: 'Total de Unidades',
+            color: '#94a3b8',
+            font: { size: 11 }
           }
         }
       }
@@ -151,4 +231,5 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 </script>
+{% endif %}
 {% endblock %}
