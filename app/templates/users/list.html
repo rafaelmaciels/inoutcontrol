@@ -26,6 +26,58 @@
     color: #38bdf8 !important;
     border-bottom: 2px solid #223552 !important;
   }
+  .form-control:focus {
+    border-color: #94a3b8 !important;
+    box-shadow: none !important;
+  }
+  /* Autocomplete Dropdown */
+  .autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    margin-top: 4px;
+    max-height: 340px;
+    overflow-y: auto;
+    z-index: 1050;
+  }
+  .autocomplete-item {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .autocomplete-item:hover, .autocomplete-item.active {
+    background-color: #f8fafc;
+  }
+  .autocomplete-item:last-child {
+    border-bottom: none;
+  }
+  .highlight-match {
+    background-color: #fef08a;
+    font-weight: 700;
+    color: #854d0e;
+    padding: 0 2px;
+    border-radius: 3px;
+  }
+  body.dark-mode .autocomplete-dropdown {
+    background: #1e293b;
+    border-color: #475569;
+  }
+  body.dark-mode .autocomplete-item {
+    border-bottom-color: #334155;
+    color: #f1f5f9;
+  }
+  body.dark-mode .autocomplete-item:hover, body.dark-mode .autocomplete-item.active {
+    background-color: #334155;
+  }
+  body.dark-mode .highlight-match {
+    background-color: #854d0e;
+    color: #fef08a;
+  }
 </style>
 
 <!-- Cabeçalho Principal -->
@@ -54,14 +106,20 @@
 
 <!-- Seção Operacional Superior (Busca + Resumo) -->
 <div class="row g-3 mb-4">
-  <!-- Card de Busca Rápida -->
+  <!-- Card de Busca Rápida com Autocomplete Fiel -->
   <div class="col-md-7">
     <div class="card action-card shadow-sm bg-white h-100 border-0">
       <div class="card-body d-flex flex-column justify-content-center py-3">
-        <span class="text-uppercase text-muted tracking-wider small mb-2 d-block">Filtro de Cadastro</span>
-        <form class="d-flex" method="get">
-          <input type="text" class="form-control me-2" name="q" placeholder="Buscar por nome, código ou e-mail..." value="{{ termo }}">
-          <button class="btn btn-secondary px-3"><i class="bi bi-search"></i></button>
+        <span class="text-uppercase text-muted tracking-wider small mb-2 d-block" style="font-size: 0.75rem; font-weight:600;">Filtro de Cadastro</span>
+        <form class="d-flex position-relative" method="get" id="formBuscaUsers">
+          <div class="position-relative flex-grow-1 me-2">
+            <input type="text" class="form-control" name="q" id="inputBuscaUsers"
+                   placeholder="Buscar por nome, código ou e-mail..." value="{{ termo }}" autocomplete="off">
+            <div id="autocompleteDropdown" class="autocomplete-dropdown shadow-lg d-none">
+              <div id="autocompleteList"></div>
+            </div>
+          </div>
+          <button class="btn btn-secondary px-3" type="submit" title="Buscar"><i class="bi bi-search"></i></button>
         </form>
       </div>
     </div>
@@ -72,12 +130,12 @@
     <div class="card action-card shadow-sm bg-light h-100 border-0">
       <div class="card-body d-flex align-items-center justify-content-between py-3">
         <div>
-          <span class="text-uppercase text-muted tracking-wider small d-block">Base de Usuários</span>
-          <h5 class="fw-bold mb-0 text-dark">
+          <span class="text-uppercase text-muted tracking-wider small d-block" style="font-size: 0.75rem; font-weight:600;">Base de Usuários</span>
+          <h5 class="fw-bold mb-0 text-dark mt-1">
             <i class="bi bi-person-check text-secondary me-1"></i> {{ users.total }} Operadores
           </h5>
         </div>
-          <i class="bi bi-people-fill fs-1 opacity-25 text-secondary"></i>
+        <i class="bi bi-people-fill fs-1 opacity-25 text-secondary"></i>
       </div>
     </div>
   </div>
@@ -99,7 +157,7 @@
     <tbody>
       {% for user in users.items %}
       <tr>
-        <td class="text-secondary fw-mono small">{{ user.codigo }}</td>
+        <td class="text-secondary fw-mono small"><span class="badge bg-light text-dark border font-monospace">{{ user.codigo }}</span></td>
         <td><span class="fw-bold text-dark">{{ user.nome }}</span></td>
         <td class="text-muted">{{ user.email }}</td>
         <td class="text-muted small">{{ user.telefone or '-' }}</td>
@@ -108,10 +166,10 @@
         </td>
         <td class="text-end">
           <div class="btn-group">
-            <a href="{{ url_for('users.edit_user', id=user.id) }}" class="btn btn-sm btn-outline-secondary border-0">
+            <a href="{{ url_for('users.edit_user', id=user.id) }}" class="btn btn-sm btn-outline-secondary border-0" title="Editar">
               <i class="bi bi-pencil"></i>
             </a>
-            <button type="button" class="btn btn-sm btn-outline-danger border-0" data-bs-toggle="modal" data-bs-target="#modalExcluir{{ user.id }}">
+            <button type="button" class="btn btn-sm btn-outline-danger border-0" data-bs-toggle="modal" data-bs-target="#modalExcluir{{ user.id }}" title="Excluir">
               <i class="bi bi-trash"></i>
             </button>
           </div>
@@ -157,3 +215,156 @@
 {% include "components/pagination.html" %}
 
 {% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const searchInput = document.getElementById("inputBuscaUsers");
+    const dropdown = document.getElementById("autocompleteDropdown");
+    const listContainer = document.getElementById("autocompleteList");
+    const form = document.getElementById("formBuscaUsers");
+
+    let debounceTimer = null;
+    let currentFocusIndex = -1;
+    let currentResults = [];
+
+    function highlightPrefix(text, prefix) {
+      if (!text) return "";
+      const textStr = String(text);
+      if (textStr.toLowerCase().startsWith(prefix.toLowerCase())) {
+        const matched = textStr.substring(0, prefix.length);
+        const remainder = textStr.substring(prefix.length);
+        return `<span class="highlight-match">${matched}</span>${remainder}`;
+      }
+      return textStr;
+    }
+
+    function closeAutocomplete() {
+      if (dropdown) {
+        dropdown.classList.add("d-none");
+        currentFocusIndex = -1;
+        currentResults = [];
+      }
+    }
+
+    function selectItem(item) {
+      if (searchInput && form) {
+        searchInput.value = item.nome;
+        closeAutocomplete();
+        form.submit();
+      }
+    }
+
+    function updateActiveItem() {
+      const items = listContainer.querySelectorAll(".autocomplete-item");
+      items.forEach((el, idx) => {
+        if (idx === currentFocusIndex) {
+          el.classList.add("active");
+          el.scrollIntoView({ block: "nearest" });
+        } else {
+          el.classList.remove("active");
+        }
+      });
+    }
+
+    if (searchInput && dropdown && listContainer) {
+      searchInput.addEventListener("input", function() {
+        const query = this.value.trim();
+        clearTimeout(debounceTimer);
+
+        if (query.length === 0) {
+          closeAutocomplete();
+          return;
+        }
+
+        debounceTimer = setTimeout(() => {
+          fetch(`/usuarios/api/autocomplete?q=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(data => {
+              currentResults = data;
+              listContainer.innerHTML = "";
+              currentFocusIndex = -1;
+
+              if (!data || data.length === 0) {
+                listContainer.innerHTML = `
+                  <div class="p-3 text-muted text-center small">
+                    <i class="bi bi-info-circle me-1"></i> Nenhum usuário encontrado iniciando com <strong>"${query}"</strong>.
+                  </div>
+                `;
+                dropdown.classList.remove("d-none");
+                return;
+              }
+
+              data.forEach((item, index) => {
+                const row = document.createElement("div");
+                row.className = "autocomplete-item d-flex align-items-center justify-content-between";
+                
+                const highlightedName = highlightPrefix(item.nome, query);
+                const highlightedCode = highlightPrefix(item.codigo, query);
+                const highlightedEmail = highlightPrefix(item.email, query);
+                const roleBadge = item.funcao ? `<span class="badge bg-light text-dark border ms-2 small">${item.funcao}</span>` : '';
+
+                row.innerHTML = `
+                  <div class="d-flex flex-column text-truncate me-2">
+                    <div class="d-flex align-items-center">
+                      <span class="badge bg-light text-dark border font-monospace me-2">${highlightedCode}</span>
+                      <strong class="text-dark small text-truncate">${highlightedName}</strong>
+                      ${roleBadge}
+                    </div>
+                    <small class="text-muted font-monospace mt-1" style="font-size: 0.72rem;">${highlightedEmail}</small>
+                  </div>
+                  <div>
+                    <i class="bi bi-arrow-right-short text-muted fs-5"></i>
+                  </div>
+                `;
+
+                row.addEventListener("click", () => {
+                  selectItem(item);
+                });
+
+                listContainer.appendChild(row);
+              });
+
+              dropdown.classList.remove("d-none");
+            })
+            .catch(() => closeAutocomplete());
+        }, 120);
+      });
+
+      searchInput.addEventListener("keydown", function(e) {
+        const items = listContainer.querySelectorAll(".autocomplete-item");
+        if (!items || items.length === 0 || dropdown.classList.contains("d-none")) {
+          return;
+        }
+
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          currentFocusIndex++;
+          if (currentFocusIndex >= items.length) currentFocusIndex = 0;
+          updateActiveItem();
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          currentFocusIndex--;
+          if (currentFocusIndex < 0) currentFocusIndex = items.length - 1;
+          updateActiveItem();
+        } else if (e.key === "Enter") {
+          if (currentFocusIndex >= 0 && currentFocusIndex < currentResults.length) {
+            e.preventDefault();
+            selectItem(currentResults[currentFocusIndex]);
+          }
+        } else if (e.key === "Escape") {
+          closeAutocomplete();
+        }
+      });
+
+      document.addEventListener("click", function(e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+          closeAutocomplete();
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}
+

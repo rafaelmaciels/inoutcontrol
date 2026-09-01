@@ -4,6 +4,7 @@ from app.extensions import db
 from app.models import User
 from app.utils.pagination import paginate   # <-- paginação geral
 from app.utils.formatters import padronizar_codigo, gerar_proximo_codigo_usuario
+from sqlalchemy import or_
 
 ITEMS_PER_PAGE = 10
 
@@ -13,6 +14,41 @@ ITEMS_PER_PAGE = 10
 def api_gerar_codigo():
     """Retorna um código único sequencial de usuário gerado automaticamente no padrão oficial (USR-XXX)."""
     return jsonify({"codigo": gerar_proximo_codigo_usuario()})
+
+
+# ============================ # API AUTOCOMPLETE DE USUÁRIOS (BUSCA FIEL POR INICIAIS) # ============================
+@users_bp.route("/api/autocomplete")
+def autocomplete_users():
+    """
+    Retorna sugestões JSON para autocomplete fiel onde o nome, código ou e-mail começa com as iniciais digitadas.
+    Exemplo: 'CAR' retorna 'Carlos Eduardo', 'USR-002', etc.
+    """
+    termo = request.args.get("q", "").strip()
+    if not termo:
+        return jsonify([])
+
+    starts_like = f"{termo}%"
+    users = User.query.filter(
+        or_(
+            User.nome.ilike(starts_like),
+            User.codigo.ilike(starts_like),
+            User.email.ilike(starts_like),
+            User.funcao.ilike(starts_like)
+        )
+    ).order_by(User.nome.asc()).limit(10).all()
+
+    results = []
+    for u in users:
+        results.append({
+            "id": u.id,
+            "codigo": u.codigo,
+            "nome": u.nome,
+            "email": u.email,
+            "funcao": u.funcao or "Operador",
+            "telefone": u.telefone or ""
+        })
+
+    return jsonify(results)
 
 
 @users_bp.route("/")

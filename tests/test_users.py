@@ -94,3 +94,22 @@ def test_auto_generate_user_code_and_prevent_duplicate(client, app):
     assert cod in dup_text
     assert "com o" in dup_text or "com esse" in dup_text or "existe" in dup_text
 
+def test_users_autocomplete_faithful_prefix(client, app):
+    with app.app_context():
+        u1 = User(codigo="USR-010", nome="CARLOS ALBERTO", email="carlos.alberto@empresa.com", telefone="11999991111", funcao="Mecânico")
+        u2 = User(codigo="USR-011", nome="CARLOS EDUARDO", email="carlos.eduardo@empresa.com", telefone="11999992222", funcao="Supervisor")
+        u3 = User(codigo="USR-012", nome="MARCELO COSTA", email="marcelo@empresa.com", telefone="11999993333", funcao="Operador")
+        db.session.add_all([u1, u2, u3])
+        db.session.commit()
+
+    # Busca por "CAR" (deve trazer somente os usuários iniciando com CAR)
+    res = client.get("/usuarios/api/autocomplete?q=CAR")
+    assert res.status_code == 200
+    data = res.get_json()
+    assert len(data) == 2
+    nomes = [item["nome"] for item in data]
+    assert "CARLOS ALBERTO" in nomes
+    assert "CARLOS EDUARDO" in nomes
+    assert "MARCELO COSTA" not in nomes
+
+
