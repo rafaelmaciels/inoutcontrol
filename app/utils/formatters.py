@@ -47,3 +47,34 @@ def padronizar_codigo(codigo: str) -> str:
     if not codigo:
         return ""
     return str(codigo).strip().upper()
+
+def gerar_proximo_codigo_peca() -> str:
+    """
+    Analisa os códigos existentes no banco de dados e gera automaticamente o próximo
+    código numérico sequencial padronizado de 4 dígitos (ou superior), evitando 100% de duplicidades.
+    Exemplo: Se o maior código existente for '9011', gera '9012'.
+    Caso não existam códigos numéricos, inicia em '1001'.
+    """
+    from app.models import Part
+
+    codigos = [p.codigo for p in Part.query.with_entities(Part.codigo).all() if p.codigo]
+
+    numericos = []
+    for c in codigos:
+        c_clean = str(c).strip()
+        if c_clean.isdigit():
+            numericos.append(int(c_clean))
+
+    if numericos:
+        proximo_num = max(numericos) + 1
+    else:
+        proximo_num = 1001
+
+    proximo_codigo = f"{proximo_num:04d}"
+
+    while Part.query.filter_by(codigo=proximo_codigo).first() is not None:
+        proximo_num += 1
+        proximo_codigo = f"{proximo_num:04d}"
+
+    return proximo_codigo
+

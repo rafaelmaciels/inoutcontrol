@@ -44,6 +44,14 @@ def create_app(config_class=Config, config_override=None):
     app.register_blueprint(notes_bp, url_prefix="/notas")  # <-- ADICIONADO: Registro do blueprint
 
     # =========================================================================
+    # ROTA PARA SERVIR UPLOADS DE IMAGENS
+    # =========================================================================
+    @app.route("/uploads/<path:filename>")
+    def uploaded_file(filename):
+        from flask import send_from_directory
+        return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
+
+    # =========================================================================
     # FILTRO CUSTOMIZADO: Formatação de Moeda Brasileira (R$ 103.926,00)
     # =========================================================================
     @app.template_filter('brmoeda')

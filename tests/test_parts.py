@@ -39,7 +39,7 @@ def test_create_part_with_brand(client, app):
     }, follow_redirects=True)
 
     assert res.status_code == 200
-    assert b"Pe\xc3\xa7a cadastrada com sucesso!" in res.data
+    assert "cadastrada com sucesso!" in res.get_data(as_text=True)
 
     with app.app_context():
         part = Part.query.filter_by(codigo="7907").first()
@@ -89,3 +89,43 @@ def test_parts_autocomplete_faithful_prefix(client, app):
     assert "ALICATE UNIVERSAL" in nomes
     assert "ALICATE DE PRESSAO" in nomes
     assert "CHAVE ALEN" not in nomes
+
+def test_auto_generate_part_code_and_prevent_duplicate(client, app):
+    # 1. API de geração de código
+    res_api = client.get("/pecas/api/gerar-codigo")
+    assert res_api.status_code == 200
+    cod = res_api.get_json()["codigo"]
+    assert len(cod) >= 4 and cod.isdigit()
+
+    # 2. Tela /pecas/novo traz o código pré-gerado
+    res_get = client.get("/pecas/novo")
+    assert res_get.status_code == 200
+    assert cod in res_get.get_data(as_text=True)
+
+    # 3. Cadastro sem informar código (gera automaticamente)
+    res_post = client.post("/pecas/novo", data={
+        "nome": "SOQUETE IMPACTO 19MM",
+        "codigo": "",
+        "quantidade": "10",
+        "valor_custo": "25.00"
+    }, follow_redirects=True)
+    assert res_post.status_code == 200
+    assert "cadastrada com sucesso!" in res_post.get_data(as_text=True)
+
+    with app.app_context():
+        p = Part.query.filter_by(nome="SOQUETE IMPACTO 19MM").first()
+        assert p is not None
+        assert p.codigo == cod
+
+    # 4. Tentativa de cadastro com código duplicado deve ser bloqueada
+    res_dup = client.post("/pecas/novo", data={
+        "nome": "OUTRA PECA MESMO CODIGO",
+        "codigo": cod,
+        "quantidade": "1",
+        "valor_custo": "10.00"
+    }, follow_redirects=True)
+    dup_text = res_dup.get_data(as_text=True)
+    assert cod in dup_text
+    assert "com esse" in dup_text or "com o" in dup_text or "existe" in dup_text
+
+

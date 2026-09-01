@@ -3,7 +3,7 @@ from app.parts import parts_bp
 from app.extensions import db
 from app.models import Part, Brand
 from app.utils.pagination import paginate
-from app.utils.formatters import allowed_file, padronizar_codigo
+from app.utils.formatters import allowed_file, padronizar_codigo, gerar_proximo_codigo_peca
 from app.utils.pdf import render_pdf_response
 from sqlalchemy import func, or_
 from sqlalchemy.orm import joinedload
@@ -18,6 +18,13 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 
 ITEMS_PER_PAGE = 10
+
+
+# ============================ # API GERAR CÓDIGO AUTOMÁTICO # ============================
+@parts_bp.route("/api/gerar-codigo")
+def api_gerar_codigo():
+    """Retorna um código único sequencial gerado automaticamente no padrão oficial."""
+    return jsonify({"codigo": gerar_proximo_codigo_peca()})
 
 
 # ============================ # API AUTOCOMPLETE DE PEÇAS (BUSCA FIEL POR INICIAIS) # ============================
@@ -97,19 +104,24 @@ def create_part():
     if request.method == "POST":
         nome = request.form.get("nome", "").strip()
         codigo = padronizar_codigo(request.form.get("codigo", ""))
+        
+        # Se não fornecido ou vazio, gera automaticamente no padrão oficial
+        if not codigo:
+            codigo = gerar_proximo_codigo_peca()
+
         descricao = request.form.get("descricao", "").strip()
         quantidade = request.form.get("quantidade", "").strip()
         valor_custo = request.form.get("valor_custo", "").strip()
         marca_nome = request.form.get("marca", "").strip()
 
-        if not nome or not codigo or not quantidade or not valor_custo:
+        if not nome or not quantidade or not valor_custo:
             flash("Preencha todos os campos obrigatórios.", "danger")
-            return render_template("parts/form.html", part=None, marcas=marcas)
+            return render_template("parts/form.html", part=None, marcas=marcas, codigo_sugerido=gerar_proximo_codigo_peca())
 
         existente = Part.query.filter_by(codigo=codigo).first()
         if existente:
-            flash("Já existe uma peça com esse código.", "danger")
-            return render_template("parts/form.html", part=None, marcas=marcas)
+            flash(f"Já existe uma peça com o código '{codigo}'.", "danger")
+            return render_template("parts/form.html", part=None, marcas=marcas, codigo_sugerido=gerar_proximo_codigo_peca())
 
         valor_custo = valor_custo.replace(",", ".")
 
@@ -133,7 +145,7 @@ def create_part():
                 foto_filename = filename
             else:
                 flash("Formato de arquivo inválido. Envie apenas imagens (png, jpg, jpeg, gif).", "danger")
-                return render_template("parts/form.html", part=None, marcas=marcas)
+                return render_template("parts/form.html", part=None, marcas=marcas, codigo_sugerido=gerar_proximo_codigo_peca())
 
         part = Part(
             nome=nome,
@@ -146,10 +158,11 @@ def create_part():
         )
         db.session.add(part)
         db.session.commit()
-        flash("Peça cadastrada com sucesso!", "success")
+        flash(f"Peça '{nome}' (Cód: {codigo}) cadastrada com sucesso!", "success")
         return redirect(url_for("parts.list_parts"))
 
-    return render_template("parts/form.html", part=None, marcas=marcas)
+    codigo_sugerido = gerar_proximo_codigo_peca()
+    return render_template("parts/form.html", part=None, marcas=marcas, codigo_sugerido=codigo_sugerido)
 
 
 # ============================ # EDITAR PEÇA # ============================

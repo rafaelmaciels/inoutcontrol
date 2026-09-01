@@ -26,16 +26,6 @@ app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, "static", "uploads")
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 
-# ============================ # ROTA PARA SERVIR UPLOADS # ============================
-@app.route("/uploads/<path:filename>")
-def uploaded_file(filename):
-    """
-    Rota para servir arquivos enviados (fotos das peças).
-    Busca o arquivo dentro da pasta configurada em UPLOAD_FOLDER.
-    """
-    return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
-
-
 # ============================ # TRATAMENTO DE ERRO 413 # ============================
 @app.errorhandler(413)
 def too_large(e):
