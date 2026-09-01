@@ -229,7 +229,7 @@
             {% endif %}
           </div>
         </td>
-        <td class="text-muted small text-truncate" style="max-width: 250px;">{{ part.descricao or '-' }}</td>
+        <td class="text-muted small text-truncate" style="max-width: 250px;">{{ (part.descricao|striptags) if part.descricao else '-' }}</td>
 
         <td class="text-center">
           {% if part.quantidade <= 2 %}

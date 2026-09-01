@@ -24,6 +24,8 @@ if (toggle) {
             document.body.classList.remove('dark-mode');
             localStorage.setItem('darkMode', 'light');
         }
+        // Atualiza imediatamente o gráfico do Dashboard com o novo tema
+        renderTopPecasChart();
     });
 }
 
@@ -68,92 +70,111 @@ setTimeout(() => {
 // DASHBOARD — Gráfico de peças mais movimentadas
 // ============================================================
 
-document.addEventListener("DOMContentLoaded", () => {
-    // Verifica se o backend enviou dados para o gráfico
-    if (window.dashboardData) {
-        const { labels, values } = window.dashboardData;
-        const canvas = document.getElementById('chartTopPecas');
+function renderTopPecasChart() {
+    const canvas = document.getElementById('chartTopPecas');
+    if (!canvas || typeof Chart === 'undefined') return;
 
-        // Só cria o gráfico se houver dados e o canvas existir
-        if (canvas && labels && labels.length > 0) {
-            // Destrói instância pré-existente se houver para evitar conflitos de hover/resize
-            if (window.topPecasChartInstance) {
-                window.topPecasChartInstance.destroy();
-            }
+    const rawLabels = canvas.getAttribute('data-labels');
+    const rawValues = canvas.getAttribute('data-values');
+    if (!rawLabels || !rawValues) return;
 
-            const ctx = canvas.getContext('2d');
-            window.topPecasChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Movimentações',
-                        data: values,
-                        backgroundColor: 'rgba(71, 85, 105, 0.85)',
-                        hoverBackgroundColor: 'rgba(30, 41, 59, 1)',
-                        borderColor: '#334155',
-                        borderWidth: 1,
-                        borderRadius: 4,
-                        maxBarThickness: 45
-                    }]
+    let labels = [];
+    let values = [];
+    try {
+        labels = JSON.parse(rawLabels);
+        values = JSON.parse(rawValues);
+    } catch (e) {
+        return;
+    }
+
+    if (window.topPecasChartInstance) {
+        window.topPecasChartInstance.destroy();
+    }
+
+    const isDark = document.body.classList.contains('dark-mode');
+    const barBg = isDark ? '#38bdf8' : 'rgba(71, 85, 105, 0.85)';
+    const barHover = isDark ? '#f97316' : '#1e293b';
+    const axisColor = isDark ? '#94a3b8' : '#475569';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)';
+    const tooltipBg = isDark ? '#070e1e' : '#1e293b';
+
+    const ctx = canvas.getContext('2d');
+    window.topPecasChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Movimentações',
+                data: values,
+                backgroundColor: barBg,
+                hoverBackgroundColor: barHover,
+                borderColor: isDark ? '#0284c7' : '#334155',
+                borderWidth: 1,
+                borderRadius: 4,
+                maxBarThickness: 45
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 350
+            },
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: false
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: {
-                        duration: 400
-                    },
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            enabled: true,
-                            backgroundColor: '#1e293b',
-                            padding: 10,
-                            titleFont: { size: 13, weight: '600' },
-                            bodyFont: { size: 12 },
-                            displayColors: false,
-                            callbacks: {
-                                label: function(context) {
-                                    return ` Quantidade: ${context.parsed.y} un. movimentadas`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0,
-                                color: '#64748b',
-                                font: { size: 11 }
-                            },
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                color: '#475569',
-                                font: { size: 11 },
-                                maxRotation: 20,
-                                minRotation: 0,
-                                autoSkip: true
-                            }
+                tooltip: {
+                    enabled: true,
+                    backgroundColor: tooltipBg,
+                    borderColor: isDark ? '#38bdf8' : '#475569',
+                    borderWidth: 1,
+                    padding: 10,
+                    titleFont: { size: 13, weight: '600' },
+                    bodyFont: { size: 12 },
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return ` Quantidade: ${context.parsed.y} un. movimentadas`;
                         }
                     }
                 }
-            });
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0,
+                        color: axisColor,
+                        font: { size: 11 }
+                    },
+                    grid: {
+                        color: gridColor
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: axisColor,
+                        font: { size: 11 },
+                        maxRotation: 20,
+                        minRotation: 0,
+                        autoSkip: true
+                    }
+                }
+            }
         }
-    }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    renderTopPecasChart();
 });
 
 

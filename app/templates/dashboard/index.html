@@ -117,7 +117,7 @@
       </div>
       <div class="card-body pt-0">
         <div style="position: relative; width: 100%; height: 260px;">
-          <canvas id="chartTopPecas"></canvas>
+          <canvas id="chartTopPecas" data-labels='{{ chart_labels|tojson }}' data-values='{{ chart_values|tojson }}'></canvas>
         </div>
       </div>
     </div>

@@ -28,315 +28,448 @@ footer {
 
 
 /* ============================================================
-   DARK MODE (tema escuro)
+   TEMA ESCURO PROFISSIONAL (MIDNIGHT BLUE & AMBER/ORANGE)
    ============================================================ */
 
-/* Cor geral do fundo e texto */
+/* Fundo Geral e Tipografia */
 body.dark-mode {
-    background-color: #121212;
-    color: #e0e0e0;
+    background-color: #0b1329 !important;
+    color: #cbd5e1 !important;
 }
 
-/* Cards, tabelas, alertas e footer escuros */
-body.dark-mode .card,
-body.dark-mode .table,
+/* Força Cores de Fundo Bootstrap */
+body.dark-mode .bg-white {
+    background-color: #152238 !important;
+    color: #f8fafc !important;
+}
+
+body.dark-mode .bg-light {
+    background-color: #101a2d !important;
+    color: #cbd5e1 !important;
+}
+
+/* Textos e Tipografia */
+body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, 
+body.dark-mode h4, body.dark-mode h5, body.dark-mode h6 {
+    color: #f8fafc !important;
+}
+
+body.dark-mode .text-dark {
+    color: #f8fafc !important;
+}
+
+body.dark-mode .text-muted, 
+body.dark-mode .text-secondary {
+    color: #94a3b8 !important;
+}
+
+/* Bordas Globais */
+body.dark-mode .border,
+body.dark-mode .border-top,
+body.dark-mode .border-bottom,
+body.dark-mode .border-start,
+body.dark-mode .border-end {
+    border-color: #223552 !important;
+}
+
+/* ============================================================
+   NAVBAR E RODAPÉ NO DARK MODE
+   ============================================================ */
+
+body.dark-mode .navbar,
+body.dark-mode .navbar-custom {
+    background-color: #070e1e !important;
+    border-bottom: 1px solid #1a2942 !important;
+}
+
+body.dark-mode .navbar-brand {
+    color: #f8fafc !important;
+}
+
+body.dark-mode .navbar-nav .nav-link {
+    color: #94a3b8 !important;
+}
+
+body.dark-mode .navbar-nav .nav-link:hover,
+body.dark-mode .navbar-nav .nav-link.active {
+    color: #38bdf8 !important; /* Azul Celeste */
+}
+
 body.dark-mode footer,
-body.dark-mode .alert {
-    background-color: #1f1f1f !important;
-    color: #e0e0e0 !important;
+body.dark-mode .app-footer {
+    background-color: #070e1e !important;
+    border-top: 1px solid #1a2942 !important;
+    color: #64748b !important;
 }
 
-/* Navbar escura */
-body.dark-mode .navbar {
-    background-color: #000 !important;
+body.dark-mode .app-footer a {
+    color: #38bdf8 !important;
 }
 
-/* Links azulados no dark mode */
-body.dark-mode a {
-    color: #9fd3ff;
+/* ============================================================
+   CARDS E PAINÉIS NO DARK MODE
+   ============================================================ */
+
+body.dark-mode .card {
+    background-color: #152238 !important;
+    color: #cbd5e1 !important;
+    border: 1px solid #223552 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
 }
 
+body.dark-mode .card-header {
+    background-color: #101a2d !important;
+    border-bottom: 1px solid #223552 !important;
+    color: #f8fafc !important;
+}
 
+body.dark-mode .card-footer {
+    background-color: #101a2d !important;
+    border-top: 1px solid #223552 !important;
+}
+
+/* Action Cards do Dashboard & Peças */
+body.dark-mode .action-card {
+    background-color: #152238 !important;
+    border: 1px solid #223552 !important;
+}
+
+body.dark-mode .action-card:hover {
+    background-color: #1c2d4a !important;
+    border-color: #38bdf8 !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.dark-mode .action-card h3,
+body.dark-mode .action-card h5 {
+    color: #facc15 !important; /* Amarelo Vibrante para valores em destaque */
+}
+
+body.dark-mode .action-card .tracking-wider {
+    color: #38bdf8 !important; /* Azul Celeste nos pequenos títulos de card */
+}
+
+/* Atenção Crítica (Itens com Baixo Estoque) */
+body.dark-mode .list-clean-item {
+    background-color: #2a151b !important; /* Vinho suave */
+    border: 1px solid #451a23 !important;
+    border-left: 4px solid #f87171 !important; /* Vermelho/Laranja de destaque */
+}
+
+body.dark-mode .list-clean-item span {
+    color: #fecdd3 !important; /* Texto claro com alto contraste */
+}
 
 /* ============================================================
    TABELAS NO DARK MODE
-   (Usuários, Peças, Relatórios, etc.)
    ============================================================ */
 
-/* Cabeçalho da tabela escuro */
-body.dark-mode table.table thead tr {
-    background-color: #000 !important;
-    color: #e0e0e0 !important;
+body.dark-mode .table,
+body.dark-mode table.table {
+    background-color: #152238 !important;
+    color: #f1f5f9 !important;
+    border-color: #223552 !important;
 }
 
-/* Linhas da tabela (inclui striped e hover) */
+body.dark-mode .table thead tr,
+body.dark-mode .table-clean th,
+body.dark-mode table.table thead th {
+    background-color: #0d1728 !important;
+    color: #38bdf8 !important; /* Azul Celeste nos cabeçalhos de tabela */
+    border-bottom: 2px solid #223552 !important;
+    border-color: #223552 !important;
+}
+
+body.dark-mode .table tbody tr,
 body.dark-mode table.table tbody tr {
-    background-color: #1f1f1f !important;
-    color: #e0e0e0 !important;
+    background-color: #152238 !important;
+    color: #f1f5f9 !important;
 }
 
-/* Linhas em tabelas listradas (striped) */
-body.dark-mode table.table.table-striped tbody tr:nth-of-type(odd),
-body.dark-mode table.table.table-striped tbody tr:nth-of-type(even) {
-    background-color: #202020 !important;
-}
-
-/* Hover nas linhas */
-body.dark-mode table.table.table-hover tbody tr:hover {
-    background-color: #2a2a2a !important;
-}
-
-/* Bordas da tabela */
-body.dark-mode table.table td,
-body.dark-mode table.table th {
-    border-color: #333 !important;
-}
-
-
-
-/* ============================================================
-   FORMULÁRIOS NO DARK MODE
-   (inputs, selects, textareas, filtros, modal)
-   ============================================================ */
-
-/* Inputs, selects e textareas escuros */
-body.dark-mode input,
-body.dark-mode select,
-body.dark-mode textarea {
-    background-color: #2a2a2a !important;
-    color: #e0e0e0 !important;
-    border: 1px solid #444 !important;
-}
-
-/* Placeholder mais claro */
-body.dark-mode input::placeholder,
-body.dark-mode textarea::placeholder {
-    color: #b5b5b5 !important;
-}
-
-/* Select com seta visível */
-body.dark-mode select {
-    background-image: none !important;
-}
-
-/* Labels continuam claras */
-body.dark-mode label {
-    color: #e0e0e0 !important;
-}
-
-/* Modal escuro */
-body.dark-mode .modal-content {
-    background-color: #1f1f1f !important;
-    color: #e0e0e0 !important;
-    border: 1px solid #333 !important;
-}
-
-/* Header e footer do modal */
-body.dark-mode .modal-header,
-body.dark-mode .modal-footer {
-    border-color: #333 !important;
-}
-
-/* ============================================================
-   PAGINAÇÃO — MODO DARK
-   Ajusta cores da paginação quando o sistema está em dark mode
-   ============================================================ */
-
-body.dark-mode .pagination .page-link {
-    background-color: #1f1f1f !important;
-    border-color: #444 !important;
-    color: #ddd !important;
-}
-
-body.dark-mode .pagination .page-link:hover {
-    background-color: #333 !important;
-    border-color: #666 !important;
-    color: #fff !important;
-}
-
-body.dark-mode .pagination .active .page-link {
-    background-color: #dc3545 !important; /* vermelho elegante */
-    border-color: #dc3545 !important;
-    color: #fff !important;
-}
-
-body.dark-mode .pagination .disabled .page-link {
-    background-color: #2a2a2a !important;
-    border-color: #444 !important;
-    color: #666 !important;
-}
-
-/* ============================================================
-   TIMELINE — ANIMAÇÃO DE ENTRADA
-   ============================================================ */
-
-/* Animação suave ao carregar itens */
-.timeline li {
-    opacity: 0;
-    transform: translateY(10px);
-    animation: fadeInUp 0.4s forwards;
-}
-
-/* Pequeno atraso alternado para efeito cascata */
-.timeline li:nth-child(odd) {
-    animation-delay: 0.1s;
-}
-
-.timeline li:nth-child(even) {
-    animation-delay: 0.2s;
-}
-
-/* Keyframe da animação */
-@keyframes fadeInUp {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-
-
-/* ============================================================
-   MENSAGEM "Nenhuma movimentação neste dia"
-   ============================================================ */
-
-/* Modo claro */
-.timeline-empty {
-    color: #555;
-    font-weight: 600;
-    text-align: center;
-}
-
-/* Modo escuro — BRANCO E VISÍVEL */
-body.dark-mode .timeline-empty {
+body.dark-mode .table tbody tr:hover,
+body.dark-mode table.table tbody tr:hover td {
+    background-color: #1c2d4a !important;
     color: #ffffff !important;
 }
 
+body.dark-mode .table td,
+body.dark-mode .table th,
+body.dark-mode table.table td,
+body.dark-mode table.table th {
+    border-color: #223552 !important;
+    color: #f1f5f9 !important;
+}
 
+body.dark-mode .table td.text-muted,
+body.dark-mode .table td .text-muted {
+    color: #94a3b8 !important;
+}
 
 /* ============================================================
-   DESTAQUE DE MOVIMENTAÇÕES RECENTES (modo claro)
+   FORMULÁRIOS E INPUTS NO DARK MODE
    ============================================================ */
 
-/* Destaque forte — últimos 5 minutos */
-.recent-strong {
-    animation: pulseStrong 1.5s infinite;
-    border-left: 5px solid #28a745 !important;
+body.dark-mode input.form-control,
+body.dark-mode select.form-select,
+body.dark-mode textarea.form-control {
+    background-color: #0d1728 !important;
+    border: 1px solid #223552 !important;
+    color: #f8fafc !important;
 }
 
-/* Destaque leve — últimos 30 minutos */
-.recent-light {
-    animation: pulseLight 2.5s infinite;
-    border-left: 5px solid #17a2b8 !important;
+body.dark-mode input.form-control:focus,
+body.dark-mode select.form-select:focus,
+body.dark-mode textarea.form-control:focus {
+    background-color: #0d1728 !important;
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 0 0.25rem rgba(56, 189, 248, 0.25) !important;
+    color: #ffffff !important;
 }
 
-/* Animação do destaque forte */
-@keyframes pulseStrong {
-    0% { background-color: #eaffea; }
-    50% { background-color: #ffffff; }
-    100% { background-color: #eaffea; }
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+    color: #64748b !important;
 }
 
-/* Animação do destaque leve */
-@keyframes pulseLight {
-    0% { background-color: #eefaff; }
-    50% { background-color: #ffffff; }
-    100% { background-color: #eefaff; }
+body.dark-mode label,
+body.dark-mode .form-label {
+    color: #f1f5f9 !important;
 }
 
-
+body.dark-mode .form-text {
+    color: #94a3b8 !important;
+}
 
 /* ============================================================
-   DARK MODE — AJUSTES ESPECÍFICOS DA TIMELINE
+   MODAIS NO DARK MODE
    ============================================================ */
 
-/* Cards da timeline realmente escuros */
-body.dark-mode .card {
-    background-color: #1e1e1e !important;
-    color: #e0e0e0 !important;
-    border-color: #333 !important;
+body.dark-mode .modal-content {
+    background-color: #152238 !important;
+    color: #f8fafc !important;
+    border: 1px solid #2e476b !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
 }
 
-/* Texto "muted" mais visível */
-body.dark-mode .card .text-muted {
-    color: #b5b5b5 !important;
+body.dark-mode .modal-header {
+    background-color: #101a2d !important;
+    border-bottom: 1px solid #223552 !important;
 }
 
-/* Badges ajustadas para contraste */
+body.dark-mode .modal-footer {
+    background-color: #101a2d !important;
+    border-top: 1px solid #223552 !important;
+}
+
+body.dark-mode .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* ============================================================
+   DROPDOWNS NO DARK MODE
+   ============================================================ */
+
+body.dark-mode .dropdown-menu {
+    background-color: #152238 !important;
+    border: 1px solid #2e476b !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6) !important;
+}
+
+body.dark-mode .dropdown-item {
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .dropdown-item:hover,
+body.dark-mode .dropdown-item:focus {
+    background-color: #1c2d4a !important;
+    color: #38bdf8 !important;
+}
+
+body.dark-mode .dropdown-divider {
+    border-color: #223552 !important;
+}
+
+body.dark-mode .dropdown-header {
+    color: #f59e0b !important; /* Destaque Âmbar / Amarelo */
+}
+
+/* ============================================================
+   BADGES E TAGS NO DARK MODE
+   ============================================================ */
+
+body.dark-mode .badge.bg-light {
+    background-color: #1e3a5f !important;
+    color: #93c5fd !important;
+    border: 1px solid #2563eb !important;
+}
+
 body.dark-mode .badge.bg-warning {
-    background-color: #d4a72c !important;
-    color: #000 !important;
+    background-color: #d97706 !important; /* Laranja / Âmbar */
+    color: #ffffff !important;
+}
+
+body.dark-mode .badge.bg-primary {
+    background-color: #0284c7 !important;
+    color: #ffffff !important;
 }
 
 body.dark-mode .badge.bg-success {
-    background-color: #2e7d32 !important;
+    background-color: #059669 !important;
+    color: #ffffff !important;
 }
 
-/* Bordas de status mais visíveis */
-body.dark-mode .border-danger {
-    border-left: 5px solid #ff6b6b !important;
+body.dark-mode .badge.bg-danger {
+    background-color: #dc2626 !important;
+    color: #ffffff !important;
 }
 
-body.dark-mode .border-success {
-    border-left: 5px solid #4caf50 !important;
+body.dark-mode .badge.bg-info {
+    background-color: #0891b2 !important;
+    color: #ffffff !important;
 }
 
-/* Destaque forte no dark mode */
-body.dark-mode .recent-strong {
-    animation: pulseStrongDark 1.5s infinite;
-    border-left: 5px solid #4caf50 !important;
-}
-
-/* Destaque leve no dark mode */
-body.dark-mode .recent-light {
-    animation: pulseLightDark 2.5s infinite;
-    border-left: 5px solid #64b5f6 !important;
-}
-
-/* Animação forte no dark mode */
-@keyframes pulseStrongDark {
-    0% { background-color: #1f2a1f; }
-    50% { background-color: #1e1e1e; }
-    100% { background-color: #1f2a1f; }
-}
-
-/* Animação leve no dark mode */
-@keyframes pulseLightDark {
-    0% { background-color: #1f242f; }
-    50% { background-color: #1e1e1e; }
-    100% { background-color: #1f242f; }
+body.dark-mode .badge.bg-secondary,
+body.dark-mode .badge.bg-secondary-subtle {
+    background-color: #1c2d4a !important;
+    color: #93c5fd !important;
+    border: 1px solid #2e476b !important;
 }
 
 /* ============================================================
-   FOOTER — ESTILOS DO LINK DO DESENVOLVEDOR
+   BOTÕES NO DARK MODE
    ============================================================ */
 
-/* Remove o sublinhado do link no rodapé para um visual mais limpo */
-.app-footer a {
-    text-decoration: none !important;
+body.dark-mode .btn-secondary {
+    background-color: #223552 !important;
+    border-color: #2e476b !important;
+    color: #f8fafc !important;
+}
+
+body.dark-mode .btn-secondary:hover {
+    background-color: #2e476b !important;
+    border-color: #38bdf8 !important;
+}
+
+body.dark-mode .btn-outline-secondary {
+    border-color: #2e476b !important;
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .btn-outline-secondary:hover {
+    background-color: #1c2d4a !important;
+    border-color: #38bdf8 !important;
+    color: #38bdf8 !important;
+}
+
+body.dark-mode .btn-light,
+body.dark-mode .btn-white {
+    background-color: #152238 !important;
+    border-color: #2e476b !important;
+    color: #f8fafc !important;
+}
+
+body.dark-mode .btn-light:hover,
+body.dark-mode .btn-white:hover {
+    background-color: #1c2d4a !important;
+    color: #38bdf8 !important;
+}
+
+body.dark-mode .btn-dark {
+    background-color: #0284c7 !important; /* Azul de Ação */
+    border-color: #0369a1 !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .btn-dark:hover {
+    background-color: #0369a1 !important;
+    border-color: #38bdf8 !important;
+}
+
+/* Links no Dark Mode */
+body.dark-mode a {
+    color: #38bdf8;
+}
+
+body.dark-mode a:hover {
+    color: #7dd3fc;
+}
+
+body.dark-mode a.text-primary,
+body.dark-mode .text-primary {
+    color: #38bdf8 !important;
+}
+
+body.dark-mode a.text-warning,
+body.dark-mode .text-warning {
+    color: #facc15 !important;
+}
+
+body.dark-mode a.text-success,
+body.dark-mode .text-success {
+    color: #34d399 !important;
+}
+
+body.dark-mode a.text-danger,
+body.dark-mode .text-danger {
+    color: #f87171 !important;
 }
 
 /* ============================================================
-   DASHBOARD — BAIXO ESTOQUE (DARK MODE FIX)
+   PAGINAÇÃO NO DARK MODE
    ============================================================ */
 
-/* Modo claro: mantém o padrão */
-.list-group-item {
-    background-color: #fff;
-    color: #000;
+body.dark-mode .pagination .page-link {
+    background-color: #152238 !important;
+    border-color: #223552 !important;
+    color: #cbd5e1 !important;
 }
 
-/* Modo escuro: ajusta fundo e texto */
-body.dark-mode .list-group-item {
-    background-color: #1f1f1f !important;
-    color: #fff !important;
-    border-color: #333 !important;
+body.dark-mode .pagination .page-link:hover {
+    background-color: #1c2d4a !important;
+    border-color: #38bdf8 !important;
+    color: #38bdf8 !important;
 }
 
-/* Badge no dark mode */
-body.dark-mode .list-group-item .badge {
-    color: #fff !important;
+body.dark-mode .pagination .active .page-link {
+    background-color: #0284c7 !important;
+    border-color: #0284c7 !important;
+    color: #ffffff !important;
 }
+
+/* ============================================================
+   TOM SELECT NO DARK MODE
+   ============================================================ */
+body.dark-mode .ts-wrapper .ts-control {
+    background-color: #0d1728 !important;
+    border-color: #223552 !important;
+    color: #f8fafc !important;
+}
+
+body.dark-mode .ts-wrapper.focus .ts-control {
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 0 0.25rem rgba(56, 189, 248, 0.25) !important;
+}
+
+body.dark-mode .ts-dropdown {
+    background-color: #152238 !important;
+    border: 1px solid #2e476b !important;
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .ts-dropdown .option {
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .ts-dropdown .option:hover,
+body.dark-mode .ts-dropdown .active {
+    background-color: #1c2d4a !important;
+    color: #38bdf8 !important;
+}
+
+body.dark-mode .ts-wrapper .ts-control input {
+    color: #f8fafc !important;
+}
+
 
 
 /* ============================================================
