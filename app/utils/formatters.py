@@ -41,3 +41,9 @@ def formatar_moeda_br(valor) -> str:
     if valor is None:
         return "0,00"
     return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+def padronizar_codigo(codigo: str) -> str:
+    """Padroniza códigos de peças/itens e usuários removendo espaços extras e convertendo para maiúsculas."""
+    if not codigo:
+        return ""
+    return str(codigo).strip().upper()

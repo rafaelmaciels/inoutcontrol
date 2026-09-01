@@ -3,7 +3,7 @@ from app.parts import parts_bp
 from app.extensions import db
 from app.models import Part, Brand
 from app.utils.pagination import paginate
-from app.utils.formatters import allowed_file
+from app.utils.formatters import allowed_file, padronizar_codigo
 from app.utils.pdf import render_pdf_response
 from sqlalchemy import func, or_
 from sqlalchemy.orm import joinedload
@@ -96,7 +96,7 @@ def create_part():
 
     if request.method == "POST":
         nome = request.form.get("nome", "").strip()
-        codigo = request.form.get("codigo", "").strip()
+        codigo = padronizar_codigo(request.form.get("codigo", ""))
         descricao = request.form.get("descricao", "").strip()
         quantidade = request.form.get("quantidade", "").strip()
         valor_custo = request.form.get("valor_custo", "").strip()
@@ -160,7 +160,7 @@ def edit_part(id):
 
     if request.method == "POST":
         nome = request.form.get("nome", "").strip()
-        codigo = request.form.get("codigo", "").strip()
+        codigo = padronizar_codigo(request.form.get("codigo", ""))
         descricao = request.form.get("descricao", "").strip()
         quantidade = request.form.get("quantidade", "").strip()
         valor_custo = request.form.get("valor_custo", "").strip()

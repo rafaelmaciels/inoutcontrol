@@ -151,6 +151,30 @@ def seed_database():
                 "quantidade": 6,
                 "valor_custo": 78.00,
                 "brand": marcas_map.get("TRAMONTINA PRO")
+            },
+            {
+                "codigo": "5021",
+                "nome": "ALICATE UNIVERSAL 8 POL",
+                "descricao": "Alicate universal em aço cromo vanádio cabo ergonômico",
+                "quantidade": 10,
+                "valor_custo": 45.00,
+                "brand": marcas_map.get("GEDORE")
+            },
+            {
+                "codigo": "5022",
+                "nome": "ALICATE DE CORTE DIAGONAL",
+                "descricao": "Alicate de corte diagonal 6 polegadas linha pesada",
+                "quantidade": 8,
+                "valor_custo": 52.00,
+                "brand": marcas_map.get("GEDORE")
+            },
+            {
+                "codigo": "2002",
+                "nome": "PARAFUSO SEXTAVADO M8",
+                "descricao": "Parafuso sextavado rosca métrica passo 1.25 zincado",
+                "quantidade": 120,
+                "valor_custo": 1.20,
+                "brand": None
             }
         ]
 
