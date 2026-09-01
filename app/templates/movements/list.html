@@ -36,6 +36,55 @@
     border-color: #94a3b8 !important;
     box-shadow: none !important;
   }
+
+  /* Autocomplete Dropdown no Modal de Devolução */
+  .autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    margin-top: 4px;
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 1065;
+  }
+  .autocomplete-item {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    padding: 9px 12px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .autocomplete-item:hover, .autocomplete-item.active {
+    background-color: #f8fafc;
+  }
+  .autocomplete-item:last-child {
+    border-bottom: none;
+  }
+  .highlight-match {
+    background-color: #fef08a;
+    font-weight: 700;
+    color: #854d0e;
+    padding: 0 2px;
+    border-radius: 3px;
+  }
+  body.dark-mode .autocomplete-dropdown {
+    background: #1e293b;
+    border-color: #475569;
+  }
+  body.dark-mode .autocomplete-item {
+    border-bottom-color: #334155;
+    color: #f1f5f9;
+  }
+  body.dark-mode .autocomplete-item:hover, body.dark-mode .autocomplete-item.active {
+    background-color: #334155;
+  }
+  body.dark-mode .highlight-match {
+    background-color: #854d0e;
+    color: #fef08a;
+  }
 </style>
 
 <!-- Cabeçalho Principal -->
@@ -292,10 +341,18 @@
         </div>
         <div class="modal-body">
           <input type="hidden" name="mov_id" id="mov_id">
-          <div class="mb-3">
-            <label class="form-label">Quem está devolvendo?</label>
-            <input type="text" class="form-control" name="devolvido_por" placeholder="Ex: João da Silva" required>
+          
+          <!-- Quem está devolvendo com Autocomplete Fiel -->
+          <div class="mb-3 position-relative">
+            <label class="form-label fw-bold">Quem está devolvendo?</label>
+            <input type="text" class="form-control" name="devolvido_por" id="inputDevolvidoPor"
+                   placeholder="Ex: João da Silva ou USR-002" autocomplete="off" required>
+            <div id="devolucaoAutocompleteDropdown" class="autocomplete-dropdown shadow-lg d-none">
+              <div id="devolucaoAutocompleteList"></div>
+            </div>
+            <div class="form-text text-muted" style="font-size: 0.75rem;">Digite as iniciais do nome ou código do operador para sugestão automática.</div>
           </div>
+
           <div class="row">
             <div class="col-md-6 mb-3">
               <label class="form-label">Data</label>
@@ -383,6 +440,149 @@
         allowEmptyOption: true
       });
     });
+
+    // --- Autocomplete Fiel no Modal de Devolução Manual ---
+    const inputDev = document.getElementById("inputDevolvidoPor");
+    const dropdownDev = document.getElementById("devolucaoAutocompleteDropdown");
+    const listDev = document.getElementById("devolucaoAutocompleteList");
+
+    let debounceTimerDev = null;
+    let currentFocusDev = -1;
+    let currentResultsDev = [];
+
+    function highlightPrefixDev(text, prefix) {
+      if (!text) return "";
+      const textStr = String(text);
+      if (textStr.toLowerCase().startsWith(prefix.toLowerCase())) {
+        const matched = textStr.substring(0, prefix.length);
+        const remainder = textStr.substring(prefix.length);
+        return `<span class="highlight-match">${matched}</span>${remainder}`;
+      }
+      return textStr;
+    }
+
+    function closeDevolucaoAutocomplete() {
+      if (dropdownDev) {
+        dropdownDev.classList.add("d-none");
+        currentFocusDev = -1;
+        currentResultsDev = [];
+      }
+    }
+
+    function selectDevolucaoItem(item) {
+      if (inputDev) {
+        inputDev.value = item.nome;
+        closeDevolucaoAutocomplete();
+      }
+    }
+
+    function updateActiveDevolucaoItem() {
+      if (!listDev) return;
+      const items = listDev.querySelectorAll(".autocomplete-item");
+      items.forEach((el, idx) => {
+        if (idx === currentFocusDev) {
+          el.classList.add("active");
+          el.scrollIntoView({ block: "nearest" });
+        } else {
+          el.classList.remove("active");
+        }
+      });
+    }
+
+    if (inputDev && dropdownDev && listDev) {
+      inputDev.addEventListener("input", function() {
+        const query = this.value.trim();
+        clearTimeout(debounceTimerDev);
+
+        if (query.length === 0) {
+          closeDevolucaoAutocomplete();
+          return;
+        }
+
+        debounceTimerDev = setTimeout(() => {
+          fetch(`/usuarios/api/autocomplete?q=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(data => {
+              currentResultsDev = data;
+              listDev.innerHTML = "";
+              currentFocusDev = -1;
+
+              if (!data || data.length === 0) {
+                listDev.innerHTML = `
+                  <div class="p-3 text-muted text-center small">
+                    <i class="bi bi-info-circle me-1"></i> Nenhum usuário encontrado iniciando com <strong>"${query}"</strong>.
+                  </div>
+                `;
+                dropdownDev.classList.remove("d-none");
+                return;
+              }
+
+              data.forEach((item, index) => {
+                const row = document.createElement("div");
+                row.className = "autocomplete-item d-flex align-items-center justify-content-between";
+                
+                const highlightedName = highlightPrefixDev(item.nome, query);
+                const highlightedCode = highlightPrefixDev(item.codigo, query);
+                const roleBadge = item.funcao ? `<span class="badge bg-light text-dark border ms-2 small">${item.funcao}</span>` : '';
+
+                row.innerHTML = `
+                  <div class="d-flex flex-column text-truncate me-2">
+                    <div class="d-flex align-items-center">
+                      <span class="badge bg-light text-dark border font-monospace me-2">${highlightedCode}</span>
+                      <strong class="text-dark small text-truncate">${highlightedName}</strong>
+                      ${roleBadge}
+                    </div>
+                  </div>
+                  <div>
+                    <i class="bi bi-check2 text-primary"></i>
+                  </div>
+                `;
+
+                row.addEventListener("click", () => {
+                  selectDevolucaoItem(item);
+                });
+
+                listDev.appendChild(row);
+              });
+
+              dropdownDev.classList.remove("d-none");
+            })
+            .catch(() => closeDevolucaoAutocomplete());
+        }, 120);
+      });
+
+      inputDev.addEventListener("keydown", function(e) {
+        const items = listDev.querySelectorAll(".autocomplete-item");
+        if (!items || items.length === 0 || dropdownDev.classList.contains("d-none")) {
+          return;
+        }
+
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          currentFocusDev++;
+          if (currentFocusDev >= items.length) currentFocusDev = 0;
+          updateActiveDevolucaoItem();
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          currentFocusDev--;
+          if (currentFocusDev < 0) currentFocusDev = items.length - 1;
+          updateActiveDevolucaoItem();
+        } else if (e.key === "Enter") {
+          if (currentFocusDev >= 0 && currentFocusDev < currentResultsDev.length) {
+            e.preventDefault();
+            selectDevolucaoItem(currentResultsDev[currentFocusDev]);
+          }
+        } else if (e.key === "Escape") {
+          closeDevolucaoAutocomplete();
+        }
+      });
+
+      document.addEventListener("click", function(e) {
+        if (!inputDev.contains(e.target) && !dropdownDev.contains(e.target)) {
+          closeDevolucaoAutocomplete();
+        }
+      });
+    }
   });
 
   // Controle de Atalhos de Teclado
@@ -479,7 +679,7 @@
 
   function abrirModalDevolver(id) {
     document.getElementById('mov_id').value = id;
-    document.getElementById('formDevolver').action = "/movements/devolver/" + id;
+    document.getElementById('formDevolver').action = "/movimentacoes/devolver/" + id;
     
     const agora = new Date();
     const dia = String(agora.getDate()).padStart(2, '0');
@@ -490,8 +690,22 @@
     
     document.querySelector('input[name="data_devolucao"]').value = `${ano}-${mes}-${dia}`;
     document.querySelector('input[name="hora_devolucao"]').value = `${hora}:${min}`;
+
+    const inputDev = document.getElementById('inputDevolvidoPor');
+    if (inputDev) {
+      inputDev.value = '';
+    }
+    const dropDev = document.getElementById('devolucaoAutocompleteDropdown');
+    if (dropDev) {
+      dropDev.classList.add('d-none');
+    }
     
-    new bootstrap.Modal(document.getElementById('modalDevolver')).show();
+    const modalEl = document.getElementById('modalDevolver');
+    const modalInstance = new bootstrap.Modal(modalEl);
+    modalEl.addEventListener('shown.bs.modal', function () {
+      if (inputDev) inputDev.focus();
+    }, { once: true });
+    modalInstance.show();
   }
 </script>
 {% endblock %}
