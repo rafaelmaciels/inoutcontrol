@@ -32,9 +32,14 @@
     text-transform: uppercase;
     font-size: 0.75rem;
     letter-spacing: 0.5px;
-    background-color: #f8f9fa !important;
+    background-color: #f8f9fa;
     color: #495057;
-    border-bottom: 2px solid #dee2e6 !important;
+    border-bottom: 2px solid #dee2e6;
+  }
+  body.dark-mode .table-clean th {
+    background-color: #0d1728 !important;
+    color: #38bdf8 !important;
+    border-bottom: 2px solid #223552 !important;
   }
   .form-control:focus {
     border-color: #94a3b8 !important;
@@ -186,7 +191,7 @@
 
 <!-- Tabela de Itens Clean -->
 <div class="table-responsive">
-  <table class="table table-hover table-clean shadow-sm bg-white align-middle border">
+  <table class="table table-hover table-clean shadow-sm align-middle border">
     <thead>
       <tr>
         <th class="text-center" style="width: 80px;">Foto</th>

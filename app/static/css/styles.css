@@ -161,48 +161,79 @@ body.dark-mode .list-clean-item span {
 }
 
 /* ============================================================
-   TABELAS NO DARK MODE
+   TABELAS NO DARK MODE (FORÇA TOTAL MIDNIGHT BLUE)
    ============================================================ */
 
 body.dark-mode .table,
-body.dark-mode table.table {
+body.dark-mode table,
+body.dark-mode .table-responsive table {
+    --bs-table-bg: #152238 !important;
+    --bs-table-color: #f1f5f9 !important;
+    --bs-table-striped-bg: #101a2d !important;
+    --bs-table-striped-color: #f1f5f9 !important;
+    --bs-table-active-bg: #1c2d4a !important;
+    --bs-table-active-color: #ffffff !important;
+    --bs-table-hover-bg: #1c2d4a !important;
+    --bs-table-hover-color: #ffffff !important;
+    --bs-table-border-color: #223552 !important;
     background-color: #152238 !important;
     color: #f1f5f9 !important;
     border-color: #223552 !important;
 }
 
-body.dark-mode .table thead tr,
+/* Cabeçalho da Tabela (Thead) */
+body.dark-mode table thead,
+body.dark-mode table thead tr,
+body.dark-mode table thead th,
+body.dark-mode .table thead th,
 body.dark-mode .table-clean th,
-body.dark-mode table.table thead th {
+body.dark-mode .table > thead > tr > th {
     background-color: #0d1728 !important;
-    color: #38bdf8 !important; /* Azul Celeste nos cabeçalhos de tabela */
+    color: #38bdf8 !important; /* Azul Celeste nos cabeçalhos */
     border-bottom: 2px solid #223552 !important;
     border-color: #223552 !important;
 }
 
-body.dark-mode .table tbody tr,
-body.dark-mode table.table tbody tr {
+/* Linhas e Células do Corpo da Tabela (Tbody / Td / Th) */
+body.dark-mode table tbody,
+body.dark-mode table tbody tr,
+body.dark-mode table tbody td,
+body.dark-mode table tbody th,
+body.dark-mode .table tbody tr td,
+body.dark-mode .table > tbody > tr > td,
+body.dark-mode .table > tbody > tr > th,
+body.dark-mode .table > :not(caption) > * > * {
     background-color: #152238 !important;
     color: #f1f5f9 !important;
+    border-color: #223552 !important;
 }
 
-body.dark-mode .table tbody tr:hover,
-body.dark-mode table.table tbody tr:hover td {
+/* Efeito Hover em Linhas da Tabela */
+body.dark-mode table tbody tr:hover,
+body.dark-mode table tbody tr:hover td,
+body.dark-mode table tbody tr:hover th,
+body.dark-mode .table-hover > tbody > tr:hover > *,
+body.dark-mode .table-hover tbody tr:hover td {
     background-color: #1c2d4a !important;
     color: #ffffff !important;
 }
 
-body.dark-mode .table td,
-body.dark-mode .table th,
-body.dark-mode table.table td,
-body.dark-mode table.table th {
-    border-color: #223552 !important;
-    color: #f1f5f9 !important;
+/* Cores de textos auxiliares nas células da tabela */
+body.dark-mode table td .text-dark,
+body.dark-mode table td strong,
+body.dark-mode table td .fw-bold {
+    color: #f8fafc !important;
 }
 
-body.dark-mode .table td.text-muted,
-body.dark-mode .table td .text-muted {
+body.dark-mode table td .text-secondary,
+body.dark-mode table td .text-muted,
+body.dark-mode table td small {
     color: #94a3b8 !important;
+}
+
+body.dark-mode table td.fw-mono,
+body.dark-mode table td .fw-mono {
+    color: #38bdf8 !important; /* Código das peças/usuários em Azul Celeste */
 }
 
 /* ============================================================
