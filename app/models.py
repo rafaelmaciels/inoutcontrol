@@ -1,4 +1,5 @@
 from datetime import datetime
+from sqlalchemy.orm import validates
 # AJUSTE DE CAMINHO: Importando a extensão usando o ponto relativo do pacote 'app'
 from .extensions import db
 
@@ -46,6 +47,18 @@ class Part(db.Model):
     brand = db.relationship("Brand", back_populates="parts")
 
     movements = db.relationship("Movement", back_populates="part")
+
+    @validates('nome')
+    def validate_nome(self, key, value):
+        if value is not None:
+            return str(value).strip().upper()
+        return value
+
+    @validates('codigo')
+    def validate_codigo(self, key, value):
+        if value is not None:
+            return str(value).strip().upper()
+        return value
 
     @property
     def marca_nome(self):

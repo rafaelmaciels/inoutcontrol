@@ -87,17 +87,18 @@
           <!-- Nome -->
           <div class="mb-3">
             <label class="form-label form-label-clean fw-bold">Nome da Peça</label>
-            <input type="text" name="nome" class="form-control"
+            <input type="text" id="inputNome" name="nome" class="form-control" style="text-transform: uppercase; font-weight: 500;"
                    value="{{ part.nome if part else '' }}"
-                   placeholder="Ex: Parafuso 10mm" required>
+                   placeholder="EX: PARAFUSADEIRA E FURADEIRA" required>
+            <div class="form-text text-muted" style="font-size: 0.75rem;">O nome da peça é convertido automaticamente para letras maiúsculas.</div>
           </div>
 
           <!-- Marca / Fabricante -->
           <div class="mb-3">
             <label class="form-label form-label-clean fw-bold">Marca / Fabricante</label>
-            <input type="text" name="marca" class="form-control" list="listaMarcas"
+            <input type="text" id="inputMarca" name="marca" class="form-control" list="listaMarcas" style="text-transform: uppercase;"
                    value="{{ part.marca_nome if part else '' }}"
-                   placeholder="Ex: Robust, Bosch, Albuquerque Diesel...">
+                   placeholder="EX: ROBUST, BOSCH, ALBUQUERQUE DIESEL...">
             <datalist id="listaMarcas">
               {% if marcas %}
                 {% for m in marcas %}
@@ -181,9 +182,10 @@
 {{ super() }}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+  // Geração assíncrona de código
   const btn = document.getElementById('btnGerarCodigo');
-  const input = document.getElementById('inputCodigo');
-  if (btn && input) {
+  const inputCod = document.getElementById('inputCodigo');
+  if (btn && inputCod) {
     btn.addEventListener('click', async () => {
       try {
         btn.disabled = true;
@@ -191,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (res.ok) {
           const data = await res.json();
           if (data.codigo) {
-            input.value = data.codigo;
+            inputCod.value = data.codigo;
           }
         }
       } catch (err) {
@@ -201,6 +203,22 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // Conversão automática para maiúsculas (UPPERCASE) em tempo real ao digitar
+  const uppercaseInputs = ['inputNome', 'inputCodigo', 'inputMarca'];
+  uppercaseInputs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', function() {
+        const start = this.selectionStart;
+        const end = this.selectionEnd;
+        this.value = this.value.toUpperCase();
+        if (start !== null && end !== null) {
+          this.setSelectionRange(start, end);
+        }
+      });
+    }
+  });
 });
 </script>
 {% endblock %}

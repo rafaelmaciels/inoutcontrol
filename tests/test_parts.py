@@ -68,7 +68,7 @@ def test_edit_part_and_change_brand(client, app):
     assert res.status_code == 200
     with app.app_context():
         updated = Part.query.get(part_id)
-        assert updated.nome == "Chave Fenda Imantada"
+        assert updated.nome == "CHAVE FENDA IMANTADA"
         assert updated.quantidade == 5
         assert updated.brand.nome == "Gedore"
 

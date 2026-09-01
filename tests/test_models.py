@@ -54,4 +54,4 @@ def test_movement_relationships(app):
         assert len(user.movements) == 1
         assert len(part.movements) == 1
         assert movement.user.nome == "Carlos Silva"
-        assert movement.part.nome == "Chave Sextavada"
+        assert movement.part.nome == "CHAVE SEXTAVADA"

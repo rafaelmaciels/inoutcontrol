@@ -102,7 +102,7 @@ def create_part():
     marcas = Brand.query.order_by(Brand.nome.asc()).all()
 
     if request.method == "POST":
-        nome = request.form.get("nome", "").strip()
+        nome = request.form.get("nome", "").strip().upper()
         codigo = padronizar_codigo(request.form.get("codigo", ""))
         
         # Se não fornecido ou vazio, gera automaticamente no padrão oficial
@@ -172,7 +172,7 @@ def edit_part(id):
     marcas = Brand.query.order_by(Brand.nome.asc()).all()
 
     if request.method == "POST":
-        nome = request.form.get("nome", "").strip()
+        nome = request.form.get("nome", "").strip().upper()
         codigo = padronizar_codigo(request.form.get("codigo", ""))
         descricao = request.form.get("descricao", "").strip()
         quantidade = request.form.get("quantidade", "").strip()
