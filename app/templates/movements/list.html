@@ -162,7 +162,7 @@
         <select class="form-select form-select-sm buscar-interno" id="select-part" name="part_id">
           <option value="">Todas as Peças</option>
           {% for p in parts %}
-          <option value="{{ p.id }}" {% if part_id == p.id %}selected{% endif %}>{{ p.nome }}</option>
+          <option value="{{ p.id }}" {% if part_id == p.id %}selected{% endif %}>{{ p.nome }}{% if p.brand %} [{{ p.brand.nome }}]{% endif %}</option>
           {% endfor %}
         </select>
       </div>
@@ -205,6 +205,11 @@
               <span class="badge bg-success me-1">Entrada</span>
             {% endif %}
             <span class="fw-bold text-dark fs-5">{{ mov.part.nome }}</span>
+            {% if mov.part.brand %}
+              <span class="badge bg-light text-secondary border fw-medium px-2 py-0.5 rounded-2 ms-1" style="font-size: 0.72rem;">
+                <i class="bi bi-tag-fill me-1 opacity-75" style="font-size: 0.65rem;"></i>{{ mov.part.brand.nome }}
+              </span>
+            {% endif %}
           </div>
 
           <span class="text-muted small">

@@ -1,46 +1,24 @@
 from datetime import datetime, timedelta
-from flask import render_template, request, redirect, url_for, flash, make_response
+from flask import render_template, request, redirect, url_for, flash, current_app
 from app.movements import movements_bp
 from app.extensions import db
-from app.models import Movement, User, Part
+from app.models import Movement, User, Part, Brand
 from app.utils.pagination import paginate
-from weasyprint import HTML, CSS
-from flask import current_app
-import os
+from app.utils.formatters import parse_date, tempo_relativo
+from app.utils.pdf import render_pdf_response
 from sqlalchemy import or_
+from sqlalchemy.orm import joinedload
+import os
 
 ITEMS_PER_PAGE = 50
 
-def parse_date(date_str):
-    try:
-        return datetime.strptime(date_str, "%d-%m-%Y")
-    except:
-        try:
-            return datetime.strptime(date_str, "%Y-%m-%d")
-        except:
-            return None
-
-def tempo_relativo(dt):
-    if not dt:
-        return ""
-    agora = datetime.now()
-    diff = agora - dt
-    segundos = diff.total_seconds()
-    if segundos < 60:
-        return "agora mesmo"
-    elif segundos < 3600:
-        return f"há {int(segundos // 60)} min"
-    elif segundos < 86400:
-        return f"há {int(segundos // 3600)} h"
-    else:
-        return f"há {int(segundos // 86400)} dias"
 
 @movements_bp.route("/")
 def list_movements():
     dia = request.args.get("dia")
     
     if dia:
-        dia_atual = parse_date(dia)
+        dia_atual = parse_date(dia) or datetime.now()
     else:
         dia_atual = datetime.now()
 
@@ -51,7 +29,11 @@ def list_movements():
     part_id = request.args.get("part_id", type=int)
     status = request.args.get("status", "")
 
-    query = Movement.query.filter(
+    # Otimização com joinedload para eliminar problemas N+1
+    query = Movement.query.options(
+        joinedload(Movement.user),
+        joinedload(Movement.part).joinedload(Part.brand)
+    ).filter(
         or_(
             (Movement.data_hora >= dia_inicio) & (Movement.data_hora <= dia_fim),
             (Movement.data_devolucao >= dia_inicio) & (Movement.data_devolucao <= dia_fim)
@@ -81,22 +63,31 @@ def list_movements():
             mov.recent_class = ""
 
     users = User.query.order_by(User.nome.asc()).all()
-    parts = Part.query.order_by(Part.nome.asc()).all()
+    parts = Part.query.options(joinedload(Part.brand)).order_by(Part.nome.asc()).all()
 
     dia_atual_fmt = dia_inicio.strftime("%d-%m-%Y")
     dia_anterior = (dia_inicio - timedelta(days=1)).strftime("%d-%m-%Y")
     dia_posterior = (dia_inicio + timedelta(days=1)).strftime("%d-%m-%Y")
 
-    return render_template("movements/list.html",
-        movements=movements, users=users, parts=parts,
-        dia_atual=dia_atual_fmt, dia_navegacao=dia_atual_fmt,
-        dia_anterior=dia_anterior, dia_posterior=dia_posterior,
-        user_id=user_id or "", part_id=part_id or "", status=status)
+    return render_template(
+        "movements/list.html",
+        movements=movements, 
+        users=users, 
+        parts=parts,
+        dia_atual=dia_atual_fmt, 
+        dia_navegacao=dia_atual_fmt,
+        dia_anterior=dia_anterior, 
+        dia_posterior=dia_posterior,
+        user_id=user_id or "", 
+        part_id=part_id or "", 
+        status=status
+    )
+
 
 @movements_bp.route("/novo", methods=["GET", "POST"])
 def create_movement():
     users = User.query.order_by(User.nome.asc()).all()
-    parts = Part.query.order_by(Part.nome.asc()).all()
+    parts = Part.query.options(joinedload(Part.brand)).order_by(Part.nome.asc()).all()
 
     if request.method == "POST":
         user_id = request.form.get("user_id")
@@ -126,9 +117,15 @@ def create_movement():
             flash("Quantidade em estoque insuficiente.", "danger")
             return render_template("movements/form.html", users=users, parts=parts)
 
-        movement = Movement(tipo="saida", user=user, part=part,
-            quantidade=quantidade_int, emprestimo_aberto=True,
-            observacao=observacao, data_hora=datetime.now())
+        movement = Movement(
+            tipo="saida", 
+            user=user, 
+            part=part,
+            quantidade=quantidade_int, 
+            emprestimo_aberto=True,
+            observacao=observacao, 
+            data_hora=datetime.now()
+        )
 
         part.quantidade -= quantidade_int
         db.session.add(movement)
@@ -137,6 +134,7 @@ def create_movement():
         return redirect(url_for("movements.list_movements"))
 
     return render_template("movements/form.html", users=users, parts=parts)
+
 
 @movements_bp.route("/scanner", methods=["POST"])
 def create_movement_scanner():
@@ -163,7 +161,6 @@ def create_movement_scanner():
             flash(f"Estoque insuficiente para a peça: {part.nome}.", "warning")
             return redirect(url_for("movements.list_movements"))
 
-        # ALTERAÇÃO: Frase de observação alterada para ficar mais limpa e formal
         movement = Movement(
             tipo="saida", 
             user=user, 
@@ -178,8 +175,7 @@ def create_movement_scanner():
         msg_sucesso = f"Sucesso! 1 un. de '{part.nome}' retirada por '{user.nome}'."
 
     else:
-        # ALTERAÇÃO: Filtro user_id removido para permitir que qualquer operador devolva o item.
-        # Busca a pendência mais antiga desta peça para fazer a baixa correta.
+        # Busca a pendência mais antiga desta peça para fazer a baixa correta
         mov_aberto = Movement.query.filter_by(
             part_id=part.id, 
             emprestimo_aberto=True
@@ -188,12 +184,9 @@ def create_movement_scanner():
         if mov_aberto:
             usuario_original = mov_aberto.user.nome
             
-            # Atualiza a linha de saída original com os dados do operador atual
             mov_aberto.emprestimo_aberto = False
             mov_aberto.data_devolucao = datetime.now()
             mov_aberto.devolvido_por = user.nome
-            
-            # ALTERAÇÃO: Frase de observação da devolução ajustada para um tom profissional
             mov_aberto.observacao = (mov_aberto.observacao or "") + f"\nDevolução recebida por {user.nome} via código de barras."
             
             part.quantidade += mov_aberto.quantidade
@@ -206,10 +199,15 @@ def create_movement_scanner():
     flash(msg_sucesso, "success")
     return redirect(url_for("movements.list_movements"))
 
+
 @movements_bp.route("/ver/<int:id>")
 def view_movement(id):
-    mov = Movement.query.get_or_404(id)
+    mov = Movement.query.options(
+        joinedload(Movement.user),
+        joinedload(Movement.part).joinedload(Part.brand)
+    ).get_or_404(id)
     return render_template("movements/view.html", mov=mov)
+
 
 @movements_bp.route("/devolver/<int:id>", methods=["POST"])
 def devolver(id):
@@ -223,7 +221,11 @@ def devolver(id):
         flash("Preencha todos os campos obrigatórios.", "danger")
         return redirect(url_for("movements.list_movements"))
 
-    data_hora_devolucao = datetime.strptime(f"{data_devolucao} {hora_devolucao}", "%Y-%m-%d %H:%M")
+    try:
+        data_hora_devolucao = datetime.strptime(f"{data_devolucao} {hora_devolucao}", "%Y-%m-%d %H:%M")
+    except ValueError:
+        flash("Formato de data ou hora de devolução inválido.", "danger")
+        return redirect(url_for("movements.list_movements"))
     
     movement.emprestimo_aberto = False
     movement.data_devolucao = data_hora_devolucao
@@ -235,6 +237,7 @@ def devolver(id):
     db.session.commit()
     flash("Devolução registrada com sucesso!", "success")
     return redirect(url_for("movements.list_movements"))
+
 
 @movements_bp.route("/excluir/<int:id>")
 def delete_movement(id):
@@ -248,36 +251,45 @@ def delete_movement(id):
     flash("Movimentação excluída e estoque ajustado.", "success")
     return redirect(url_for("movements.list_movements"))
 
+
 @movements_bp.route("/pdf/<dia>")
 def pdf_movements(dia):
-    dia_dt = parse_date(dia)
+    dia_dt = parse_date(dia) or datetime.now()
     dia_inicio = datetime(dia_dt.year, dia_dt.month, dia_dt.day)
     dia_fim = dia_inicio + timedelta(days=1)
-    movimentos = Movement.query.filter(
+    
+    movimentos = Movement.query.options(
+        joinedload(Movement.user),
+        joinedload(Movement.part).joinedload(Part.brand)
+    ).filter(
         Movement.data_hora >= dia_inicio,
         Movement.data_hora < dia_fim
     ).order_by(Movement.data_hora.asc()).all()
 
     html = render_template("movements/pdf.html", movimentos=movimentos, dia=dia)
-    css_path = os.path.join(current_app.root_path, "static/css/styles.css")
-    pdf = HTML(string=html).write_pdf(stylesheets=[CSS(css_path)])
+    return render_pdf_response(
+        html_content=html,
+        filename=f"movimentacoes_{dia}.pdf",
+        fallback_endpoint="movements.list_movements",
+        fallback_args={"dia": dia}
+    )
 
-    response = make_response(pdf)
-    response.headers["Content-Type"] = "application/pdf"
-    response.headers["Content-Disposition"] = f"inline; filename=movimentacoes_{dia}.pdf"
-    return response
 
 @movements_bp.route("/comprovante/<int:id>")
 def comprovante(id):
-    mov = Movement.query.get_or_404(id)
+    mov = Movement.query.options(
+        joinedload(Movement.user),
+        joinedload(Movement.part).joinedload(Part.brand)
+    ).get_or_404(id)
+    
     html = render_template("movements/comprovante.html", mov=mov)
-    css_path = os.path.join(current_app.root_path, "static/css/styles.css")
-    pdf = HTML(string=html).write_pdf(stylesheets=[CSS(css_path)])
+    return render_pdf_response(
+        html_content=html,
+        filename=f"comprovante_{mov.id}.pdf",
+        fallback_endpoint="movements.view_movement",
+        fallback_args={"id": id}
+    )
 
-    response = make_response(pdf)
-    response.headers["Content-Type"] = "application/pdf"
-    response.headers["Content-Disposition"] = f"inline; filename=comprovante_{mov.id}.pdf"
-    return response
 
 @movements_bp.route("/relatorio", methods=["GET"])
 def relatorio_mensal():

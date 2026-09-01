@@ -72,7 +72,7 @@
       <span class="note-title">{{ note.titulo if note.titulo else 'Sem título' }}</span>
       <span class="note-date">{{ note.data_criacao.strftime('%d/%m/%Y %H:%M') if note.data_criacao else '' }}</span>
     </div>
-    <div class="note-body">{{ note.conteudo if note.conteudo else (note.observacao if note.observacao else '') }}</div>
+    <div class="note-body">{{ (note.conteudo if note.conteudo else (note.observacao if note.observacao else ''))|safe }}</div>
   </div>
   {% else %}
   <p style="text-align: center; color: #64748b; margin-top: 30px;">Nenhuma anotação localizada.</p>

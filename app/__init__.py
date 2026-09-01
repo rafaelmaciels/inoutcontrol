@@ -13,7 +13,7 @@ from .movements.routes import movements_bp  # Adicionado .routes para manter o p
 from .backup.routes import backup_bp        # Adicionado .routes para manter o padrão
 from .notes.routes import notes_bp          # <-- ADICIONADO: Import do blueprint de notas
 
-def create_app():
+def create_app(config_class=Config, config_override=None):
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
     app = Flask(
@@ -23,10 +23,17 @@ def create_app():
     )
 
     # Carrega configurações do config.py
-    app.config.from_object(Config)
+    app.config.from_object(config_class)
+    if config_override:
+        app.config.update(config_override)
 
     # Inicializa extensões
     db.init_app(app)
+
+    # Garante que as tabelas e modelos estejam sempre sincronizados
+    with app.app_context():
+        from .models import User, Part, Brand, Movement, Note
+        db.create_all()
 
     # Registrando blueprints
     app.register_blueprint(dashboard_bp)

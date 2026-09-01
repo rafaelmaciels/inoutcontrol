@@ -2,7 +2,7 @@ import io
 from flask import render_template, request, redirect, url_for, flash, send_file
 from app.extensions import db
 from app.models import Note
-from weasyprint import HTML
+from app.utils.pdf import render_pdf_response
 
 # Importa a blueprint definida no __init__.py do próprio módulo
 from . import notes_bp
@@ -30,6 +30,7 @@ def list_notes():
 
 @notes_bp.route('/novo', methods=['GET', 'POST'])
 @notes_bp.route('/<int:id>/editar', methods=['GET', 'POST'])
+@notes_bp.route('/editar/<int:id>', methods=['GET', 'POST'])
 def form_note(id=None):
     note = Note.query.get_or_404(id) if id else Note()
     
@@ -74,15 +75,8 @@ def export_pdf():
     # Renderiza o template HTML para o PDF
     rendered_html = render_template('notes/pdf_template.html', notes=notes)
     
-    # Gera o PDF via WeasyPrint em memória
-    pdf_buffer = io.BytesIO()
-    HTML(string=rendered_html).write_pdf(pdf_buffer)
-    pdf_buffer.seek(0)
-    
-    # as_attachment=False faz o navegador ABRIR o arquivo nativamente em vez de baixar
-    return send_file(
-        pdf_buffer,
-        mimetype='application/pdf',
-        as_attachment=False,
-        download_name='anotacoes.pdf'
+    return render_pdf_response(
+        html_content=rendered_html,
+        filename='anotacoes.pdf',
+        fallback_endpoint='notes.list_notes'
     )

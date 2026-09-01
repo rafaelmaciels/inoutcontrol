@@ -2,15 +2,67 @@
 <html>
 <head>
 <meta charset="utf-8">
-
-<!-- Título exibido na aba do navegador ao visualizar o PDF -->
 <title>InOutControl — Relatório de Movimentações</title>
-
-<!-- Importa o CSS externo -->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 15mm;
+  }
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    margin: 20px;
+    color: #1e293b;
+    background: #ffffff;
+    -webkit-print-color-adjust: exact;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 25px;
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 12px;
+  }
+  .header h1 {
+    margin: 0;
+    font-size: 24px;
+    color: #0f172a;
+    letter-spacing: 1px;
+  }
+  .header h2 {
+    margin: 5px 0 0 0;
+    font-size: 15px;
+    font-weight: normal;
+    color: #64748b;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    font-size: 12px;
+  }
+  th, td {
+    border: 1px solid #cbd5e1;
+    padding: 8px 10px;
+  }
+  th {
+    background-color: #f1f5f9;
+    font-weight: bold;
+    text-align: left;
+    color: #0f172a;
+  }
+  tr:nth-child(even) {
+    background-color: #f8fafc;
+  }
+  .footer {
+    margin-top: 30px;
+    text-align: center;
+    font-size: 11px;
+    color: #94a3b8;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 10px;
+  }
+</style>
 </head>
-<body class="pdf">
+<body>
 
 <div class="header">
     <h1>InOutControl</h1>
@@ -23,7 +75,7 @@
     <th>Hora</th>
     <th>Usuário</th>
     <th>Peça</th>
-    <th>Qtd</th>
+    <th style="text-align: center;">Qtd</th>
     <th>Tipo</th>
     <th>Status</th>
 </tr>
@@ -32,10 +84,10 @@
 <tbody>
 {% for mov in movimentos %}
 <tr>
-    <td>{{ mov.data_hora.strftime('%H:%M') }}</td>
-    <td>{{ mov.user.nome }}</td>
+    <td style="font-family: monospace;">{{ mov.data_hora.strftime('%H:%M') }}</td>
+    <td><strong>{{ mov.user.nome }}</strong></td>
     <td>{{ mov.part.nome }}</td>
-    <td>{{ mov.quantidade }}</td>
+    <td style="text-align: center; font-weight: bold;">{{ mov.quantidade }}</td>
     <td>
         {% if mov.tipo == 'saida' %}
             Retirada
@@ -45,9 +97,9 @@
     </td>
     <td>
         {% if mov.emprestimo_aberto %}
-            Aberto
+            <span style="color: #dc3545; font-weight: bold;">Aberto</span>
         {% else %}
-            Devolvido
+            <span style="color: #16a34a;">Devolvido</span>
         {% endif %}
     </td>
 </tr>

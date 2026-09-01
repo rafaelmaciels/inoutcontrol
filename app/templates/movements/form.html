@@ -79,7 +79,7 @@
               <option value="">Selecione a peça...</option>
               {% for part in parts %}
               <option value="{{ part.id }}">
-                {{ part.codigo }} — {{ part.nome }} (Disponível: {{ part.quantidade }})
+                {{ part.codigo }} — {{ part.nome }}{% if part.brand %} [{{ part.brand.nome }}]{% endif %} (Disponível: {{ part.quantidade }})
               </option>
               {% endfor %}
             </select>

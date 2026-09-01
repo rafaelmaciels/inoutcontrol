@@ -77,6 +77,22 @@
                    placeholder="Ex: Parafuso 10mm" required>
           </div>
 
+          <!-- Marca / Fabricante -->
+          <div class="mb-3">
+            <label class="form-label form-label-clean fw-bold">Marca / Fabricante</label>
+            <input type="text" name="marca" class="form-control" list="listaMarcas"
+                   value="{{ part.marca_nome if part else '' }}"
+                   placeholder="Ex: Robust, Bosch, Albuquerque Diesel...">
+            <datalist id="listaMarcas">
+              {% if marcas %}
+                {% for m in marcas %}
+                  <option value="{{ m.nome }}"></option>
+                {% endfor %}
+              {% endif %}
+            </datalist>
+            <div class="form-text text-muted" style="font-size: 0.75rem;">Selecione uma marca existente ou digite o nome de uma nova.</div>
+          </div>
+
           <!-- Quantidade -->
           <div class="mb-3">
             <label class="form-label form-label-clean fw-bold">Quantidade Inicial</label>

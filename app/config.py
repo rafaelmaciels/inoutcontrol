@@ -13,8 +13,9 @@ class Config:
     # Torna o BASE_DIR acessível via current_app.config["BASE_DIR"]
     BASE_DIR = BASE_DIR
 
-    # Caminho do banco de dados SQLite - Apontando para a RAIZ do projeto
-    SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(BASE_DIR, 'inoutcontrol.db')}"
+    # Caminho do banco de dados SQLite normalizado com barras normais
+    DB_FILE_PATH = os.path.join(BASE_DIR, 'inoutcontrol.db').replace("\\", "/")
+    SQLALCHEMY_DATABASE_URI = f"sqlite:///{DB_FILE_PATH}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Upload de imagens das peças (agora centralizado no BASE_DIR da raiz ou APP_DIR se preferir na pasta app)

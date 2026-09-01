@@ -1,5 +1,5 @@
 @echo off
-cd /d C:\InOutControl
+cd /d "%~dp0"
 call venv\Scripts\activate
 
 :: Inicia o python em uma nova janela.

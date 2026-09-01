@@ -1,16 +1,70 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <!-- Título exibido na aba do navegador ao visualizar o PDF -->
-    <title>InOutControl — Etiqueta A4</title>
+    <meta charset="UTF-8">
+    <title>InOutControl — Etiqueta Folha A4</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 10mm;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #ffffff;
+            -webkit-print-color-adjust: exact;
+        }
+        .etq-a4 {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-start;
+        }
+        .etq-a4-item {
+            width: 31.8%;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 10px;
+            box-sizing: border-box;
+            text-align: center;
+            background: #ffffff;
+            page-break-inside: avoid;
+            margin-bottom: 6px;
+        }
+        .etq-nome {
+            font-weight: bold;
+            font-size: 11pt;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+        .etq-marca {
+            font-size: 8pt;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .etq-codigo {
+            font-family: 'Courier New', monospace;
+            font-size: 13pt;
+            font-weight: bold;
+            color: #2563eb;
+        }
+        @media print {
+            .etq-a4-item {
+                border: 1px solid #e2e8f0;
+            }
+        }
+    </style>
 </head>
-
 <body class="etq-a4">
 
 {% for e in etiquetas %}
 <div class="etq-a4-item">
-    <strong>{{ e.codigo }}</strong><br>
-    {{ e.nome }}
+    <div class="etq-nome">{{ e.nome }}</div>
+    {% if e.marca %}<div class="etq-marca">[{{ e.marca }}]</div>{% endif %}
+    <div class="etq-codigo">{{ e.codigo }}</div>
 </div>
 {% endfor %}
 

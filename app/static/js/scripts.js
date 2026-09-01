@@ -69,33 +69,86 @@ setTimeout(() => {
 // ============================================================
 
 document.addEventListener("DOMContentLoaded", () => {
-
     // Verifica se o backend enviou dados para o gráfico
     if (window.dashboardData) {
         const { labels, values } = window.dashboardData;
-        const ctx = document.getElementById('chartTopPecas');
+        const canvas = document.getElementById('chartTopPecas');
 
         // Só cria o gráfico se houver dados e o canvas existir
-        if (ctx && labels.length > 0) {
-            new Chart(ctx, {
+        if (canvas && labels && labels.length > 0) {
+            // Destrói instância pré-existente se houver para evitar conflitos de hover/resize
+            if (window.topPecasChartInstance) {
+                window.topPecasChartInstance.destroy();
+            }
+
+            const ctx = canvas.getContext('2d');
+            window.topPecasChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Quantidade movimentada',
+                        label: 'Movimentações',
                         data: values,
-                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(71, 85, 105, 0.85)',
+                        hoverBackgroundColor: 'rgba(30, 41, 59, 1)',
+                        borderColor: '#334155',
                         borderWidth: 1,
-                        borderRadius: 6
+                        borderRadius: 4,
+                        maxBarThickness: 45
                     }]
                 },
                 options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 400
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
                     plugins: {
-                        legend: { display: false } // remove legenda
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: '#1e293b',
+                            padding: 10,
+                            titleFont: { size: 13, weight: '600' },
+                            bodyFont: { size: 12 },
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return ` Quantidade: ${context.parsed.y} un. movimentadas`;
+                                }
+                            }
+                        }
                     },
                     scales: {
-                        y: { beginAtZero: true } // eixo Y começa no zero
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0,
+                                color: '#64748b',
+                                font: { size: 11 }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#475569',
+                                font: { size: 11 },
+                                maxRotation: 20,
+                                minRotation: 0,
+                                autoSkip: true
+                            }
+                        }
                     }
                 }
             });
@@ -140,8 +193,94 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 // ============================================================
-// (RESERVADO) — Caso queira adicionar mais scripts do dashboard
+// EDITOR DE TEXTO WYSIWYG (Quill) PARA TODOS OS TEXTAREAS
 // ============================================================
 
-// Você pode adicionar novos gráficos aqui futuramente.
-// Mantive o bloco para organização do arquivo.
+function initWysiwygEditors() {
+    if (typeof Quill === 'undefined') return;
+
+    // Seleciona todos os textareas do sistema
+    const textareas = document.querySelectorAll('textarea');
+    
+    textareas.forEach(textarea => {
+        // Evita duplicar inicialização
+        if (textarea.dataset.wysiwygInitialized === 'true') return;
+        textarea.dataset.wysiwygInitialized = 'true';
+
+        // Oculta visualmente o textarea original, preservando-o para a submissão do formulário
+        textarea.style.display = 'none';
+
+        // Container externo
+        const wrapper = document.createElement('div');
+        wrapper.className = 'wysiwyg-wrapper mb-3';
+
+        // Container do editor Quill
+        const editorContainer = document.createElement('div');
+        editorContainer.className = 'wysiwyg-editor';
+        
+        // Define altura baseada no número de linhas (rows) original ou padrão
+        const rows = parseInt(textarea.getAttribute('rows')) || 4;
+        editorContainer.style.minHeight = `${Math.max(rows * 32, 110)}px`;
+
+        // Insere o wrapper no lugar do textarea
+        textarea.parentNode.insertBefore(wrapper, textarea.nextSibling);
+        wrapper.appendChild(editorContainer);
+
+        // Inicializa o Quill com toolbar completa
+        const quill = new Quill(editorContainer, {
+            theme: 'snow',
+            placeholder: textarea.getAttribute('placeholder') || 'Digite aqui...',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'align': [] }],
+                    ['link', 'clean']
+                ]
+            }
+        });
+
+        // Carrega conteúdo inicial se houver
+        const initialValue = textarea.value;
+        if (initialValue && initialValue.trim() !== '') {
+            // Se o conteúdo inicial já tiver tags HTML, injeta como HTML, senão converte quebras de linha
+            if (/<[a-z][\s\S]*>/i.test(initialValue)) {
+                quill.root.innerHTML = initialValue;
+            } else {
+                quill.setText(initialValue);
+            }
+        }
+
+        // Função de sincronização com o textarea
+        const syncContent = () => {
+            const html = quill.root.innerHTML;
+            const text = quill.getText().trim();
+            if (html === '<p><br></p>' || text.length === 0) {
+                textarea.value = '';
+            } else {
+                textarea.value = html;
+            }
+        };
+
+        // Sincroniza em tempo real a cada digitação
+        quill.on('text-change', syncContent);
+
+        // Garante sincronização no submit do formulário
+        const form = textarea.closest('form');
+        if (form) {
+            form.addEventListener('submit', syncContent);
+        }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    initWysiwygEditors();
+});
+
+// Suporte para modais Bootstrap (ex: devolução de empréstimo)
+document.addEventListener("shown.bs.modal", () => {
+    initWysiwygEditors();
+});
+

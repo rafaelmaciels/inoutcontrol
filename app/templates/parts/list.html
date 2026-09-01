@@ -40,13 +40,61 @@
     border-color: #94a3b8 !important;
     box-shadow: none !important;
   }
+  /* Autocomplete Dropdown */
+  .autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    margin-top: 4px;
+    max-height: 340px;
+    overflow-y: auto;
+    z-index: 1050;
+  }
+  .autocomplete-item {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .autocomplete-item:hover, .autocomplete-item.active {
+    background-color: #f8fafc;
+  }
+  .autocomplete-item:last-child {
+    border-bottom: none;
+  }
+  .highlight-match {
+    background-color: #fef08a;
+    font-weight: 700;
+    color: #854d0e;
+    padding: 0 2px;
+    border-radius: 3px;
+  }
+  body.dark-mode .autocomplete-dropdown {
+    background: #1e293b;
+    border-color: #475569;
+  }
+  body.dark-mode .autocomplete-item {
+    border-bottom-color: #334155;
+    color: #f1f5f9;
+  }
+  body.dark-mode .autocomplete-item:hover, body.dark-mode .autocomplete-item.active {
+    background-color: #334155;
+  }
+  body.dark-mode .highlight-match {
+    background-color: #854d0e;
+    color: #fef08a;
+  }
 </style>
 
 <!-- Cabeçalho Principal -->
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
   <div>
-    <h1 class="fw-bold mb-0 text-dark"><i class="bi bi-gear text-secondary"></i> Peças</h1>
-    <p class="text-muted small mb-0">Gerenciamento e controle de componentes do inventário</p>
+    <h1 class="fw-bold mb-0 text-dark"><i class="bi bi-gear text-secondary"></i> Inventário de Peças</h1>
+    <p class="text-muted small mb-0">Controle de estoque, precificação e identificação por código</p>
   </div>
   
   <!-- Ações Unificadas (Menu Limpo - Botão superior de Etiquetas removido conforme solicitado) -->
@@ -85,14 +133,20 @@
 
 <!-- Seção Operacional Superior (Busca + Resumo + Valor Oculto) -->
 <div class="row g-3 mb-4">
-  <!-- Card de Busca Rápida -->
+  <!-- Card de Busca Rápida com Autocomplete Fiel -->
   <div class="col-md-5">
     <div class="card action-card shadow-sm bg-white h-100 border-0">
       <div class="card-body d-flex flex-column justify-content-center py-3">
         <span class="text-uppercase text-muted tracking-wider small mb-2 d-block" style="font-size: 0.75rem; font-weight:600;">Pesquisa de Inventário</span>
-        <form class="d-flex" method="get">
-          <input type="text" class="form-control me-2" name="q" placeholder="Buscar por nome, código ou descrição..." value="{{ termo }}">
-          <button class="btn btn-secondary px-3"><i class="bi bi-search"></i></button>
+        <form class="d-flex position-relative" method="get" id="formBuscaPecas">
+          <div class="position-relative flex-grow-1 me-2">
+            <input type="text" class="form-control" name="q" id="inputBuscaPecas"
+                   placeholder="Buscar por nome ou código..." value="{{ termo }}" autocomplete="off">
+            <div id="autocompleteDropdown" class="autocomplete-dropdown shadow-lg d-none">
+              <div id="autocompleteList"></div>
+            </div>
+          </div>
+          <button class="btn btn-secondary px-3" type="submit" title="Buscar"><i class="bi bi-search"></i></button>
         </form>
       </div>
     </div>
@@ -163,10 +217,17 @@
 
         <td class="text-secondary fw-mono small">{{ part.codigo }}</td>
         <td>
-          <span class="fw-bold text-dark">{{ part.nome }}</span>
-          {% if part.em_falta %}
-            <span class="badge bg-danger ms-1" style="font-size: 0.7rem;">Em falta</span>
-          {% endif %}
+          <div class="d-flex align-items-center flex-wrap gap-1">
+            <span class="fw-bold text-dark">{{ part.nome }}</span>
+            {% if part.brand %}
+              <span class="badge bg-light text-secondary border fw-medium px-2 py-0.5 rounded-2" style="font-size: 0.72rem; letter-spacing: 0.2px;" title="Marca: {{ part.brand.nome }}">
+                <i class="bi bi-tag-fill me-1 text-secondary opacity-75" style="font-size: 0.65rem;"></i>{{ part.brand.nome }}
+              </span>
+            {% endif %}
+            {% if part.em_falta %}
+              <span class="badge bg-danger ms-1" style="font-size: 0.7rem;">Em falta</span>
+            {% endif %}
+          </div>
         </td>
         <td class="text-muted small text-truncate" style="max-width: 250px;">{{ part.descricao or '-' }}</td>
 
@@ -381,10 +442,147 @@
       }
     });
 
-    inputSenha.addEventListener("input", function() {
-      erroSenha.style.display = "none";
-      inputSenha.classList.remove("is-invalid");
-    });
+    // ============================================================
+    // AUTOCOMPLETE DE PEÇAS (BUSCA FIEL POR INICIAIS)
+    // ============================================================
+    const searchInput = document.getElementById("inputBuscaPecas");
+    const dropdown = document.getElementById("autocompleteDropdown");
+    const listContainer = document.getElementById("autocompleteList");
+    const formBusca = document.getElementById("formBuscaPecas");
+    
+    let debounceTimer = null;
+    let currentFocusIndex = -1;
+    let currentResults = [];
+
+    if (searchInput && dropdown && listContainer) {
+      function highlightPrefix(text, prefix) {
+        if (!prefix || !text) return text || '';
+        const len = prefix.length;
+        if (text.substring(0, len).toUpperCase() === prefix.toUpperCase()) {
+          return `<span class="highlight-match">${text.substring(0, len)}</span>${text.substring(len)}`;
+        }
+        return text;
+      }
+
+      function closeAutocomplete() {
+        dropdown.classList.add("d-none");
+        listContainer.innerHTML = "";
+        currentFocusIndex = -1;
+        currentResults = [];
+      }
+
+      function updateActiveItem() {
+        const items = listContainer.querySelectorAll(".autocomplete-item");
+        items.forEach((item, idx) => {
+          if (idx === currentFocusIndex) {
+            item.classList.add("active");
+            item.scrollIntoView({ block: "nearest" });
+          } else {
+            item.classList.remove("active");
+          }
+        });
+      }
+
+      function selectItem(item) {
+        searchInput.value = item.nome;
+        closeAutocomplete();
+        formBusca.submit();
+      }
+
+      searchInput.addEventListener("input", function() {
+        const query = this.value.trim();
+        clearTimeout(debounceTimer);
+
+        if (query.length === 0) {
+          closeAutocomplete();
+          return;
+        }
+
+        debounceTimer = setTimeout(() => {
+          fetch(`/pecas/api/autocomplete?q=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(data => {
+              currentResults = data;
+              listContainer.innerHTML = "";
+              currentFocusIndex = -1;
+
+              if (!data || data.length === 0) {
+                listContainer.innerHTML = `
+                  <div class="p-3 text-muted text-center small">
+                    <i class="bi bi-info-circle me-1"></i> Nenhuma peça encontrada iniciando com <strong>"${query}"</strong>.
+                  </div>
+                `;
+                dropdown.classList.remove("d-none");
+                return;
+              }
+
+              data.forEach((item, index) => {
+                const row = document.createElement("div");
+                row.className = "autocomplete-item d-flex align-items-center justify-content-between";
+                
+                const highlightedName = highlightPrefix(item.nome, query);
+                const highlightedCode = highlightPrefix(item.codigo, query);
+                const brandBadge = item.marca ? `<span class="badge bg-secondary-subtle text-secondary border ms-2 small">${item.marca}</span>` : '';
+                const stockBadge = item.quantidade > 0 
+                  ? `<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">${item.quantidade} un</span>`
+                  : `<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">0 un</span>`;
+
+                row.innerHTML = `
+                  <div class="d-flex flex-column text-truncate me-2">
+                    <div class="d-flex align-items-center">
+                      <span class="badge bg-light text-dark border font-monospace me-2">#${highlightedCode}</span>
+                      <strong class="text-dark small text-truncate">${highlightedName}</strong>
+                      ${brandBadge}
+                    </div>
+                  </div>
+                  <div>${stockBadge}</div>
+                `;
+
+                row.addEventListener("click", () => {
+                  selectItem(item);
+                });
+
+                listContainer.appendChild(row);
+              });
+
+              dropdown.classList.remove("d-none");
+            })
+            .catch(() => closeAutocomplete());
+        }, 120);
+      });
+
+      searchInput.addEventListener("keydown", function(e) {
+        const items = listContainer.querySelectorAll(".autocomplete-item");
+        if (!items || items.length === 0 || dropdown.classList.contains("d-none")) {
+          return;
+        }
+
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          currentFocusIndex++;
+          if (currentFocusIndex >= items.length) currentFocusIndex = 0;
+          updateActiveItem();
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          currentFocusIndex--;
+          if (currentFocusIndex < 0) currentFocusIndex = items.length - 1;
+          updateActiveItem();
+        } else if (e.key === "Enter") {
+          if (currentFocusIndex >= 0 && currentFocusIndex < currentResults.length) {
+            e.preventDefault();
+            selectItem(currentResults[currentFocusIndex]);
+          }
+        } else if (e.key === "Escape") {
+          closeAutocomplete();
+        }
+      });
+
+      document.addEventListener("click", function(e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+          closeAutocomplete();
+        }
+      });
+    }
   });
 
   function rotateImage(id) {

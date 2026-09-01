@@ -1,17 +1,83 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <!-- Título exibido na aba do navegador ao visualizar o PDF -->
+    <meta charset="UTF-8">
     <title>InOutControl — Etiqueta QR Code</title>
+    <style>
+        @page {
+            size: auto;
+            margin: 5mm;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #ffffff;
+            -webkit-print-color-adjust: exact;
+        }
+        .etq-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 5px;
+        }
+        .etq-qr-box {
+            width: 52mm;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 6px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            page-break-inside: avoid;
+            background: #ffffff;
+        }
+        .qr-img {
+            width: 32mm;
+            height: 32mm;
+            object-fit: contain;
+        }
+        .etq-codigo {
+            font-family: 'Courier New', monospace;
+            font-size: 10pt;
+            font-weight: bold;
+            color: #0f172a;
+            margin-top: 2px;
+        }
+        .etq-nome {
+            font-size: 8pt;
+            font-weight: 600;
+            color: #334155;
+            max-height: 2.3em;
+            overflow: hidden;
+            line-height: 1.15;
+            margin-top: 2px;
+        }
+        .etq-marca {
+            font-size: 7pt;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        @media print {
+            .etq-qr-box {
+                border: 1px solid #e2e8f0;
+            }
+        }
+    </style>
 </head>
-
 <body class="etq-grid">
 
 {% for e in etiquetas %}
-<div class="etq-small">
-    <img src="data:image/png;base64,{{ e.qr }}" class="qr">
-    <strong>{{ e.codigo }}</strong><br>
-    {{ e.nome }}
+<div class="etq-qr-box">
+    {% if e.qr %}
+        <img src="data:image/png;base64,{{ e.qr }}" class="qr-img" alt="QR Code">
+    {% endif %}
+    <div class="etq-codigo">{{ e.codigo }}</div>
+    <div class="etq-nome">{{ e.nome }}</div>
+    {% if e.marca %}<div class="etq-marca">[{{ e.marca }}]</div>{% endif %}
 </div>
 {% endfor %}
 

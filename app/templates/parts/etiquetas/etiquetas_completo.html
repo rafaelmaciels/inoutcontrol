@@ -1,18 +1,88 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <!-- Título exibido na aba do navegador ao visualizar o PDF -->
-    <title>InOutControl — Etiqueta Completa</title>
+    <meta charset="UTF-8">
+    <title>InOutControl — Etiqueta Completa (QR + Código de Barras)</title>
+    <style>
+        @page {
+            size: auto;
+            margin: 5mm;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #ffffff;
+            -webkit-print-color-adjust: exact;
+        }
+        .etq-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 5px;
+        }
+        .etq-full {
+            width: 70mm;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 8px;
+            box-sizing: border-box;
+            text-align: center;
+            page-break-inside: avoid;
+            background: #ffffff;
+        }
+        .etq-nome {
+            font-size: 9.5pt;
+            font-weight: bold;
+            color: #0f172a;
+            margin-bottom: 2px;
+            max-height: 2.3em;
+            overflow: hidden;
+            line-height: 1.15;
+        }
+        .etq-marca {
+            font-size: 7.5pt;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .qr-img {
+            width: 24mm;
+            height: 24mm;
+            object-fit: contain;
+            margin: 2px auto;
+            display: block;
+        }
+        .bar-img {
+            width: 100%;
+            height: 12mm;
+            object-fit: contain;
+            margin-top: 4px;
+        }
+        .etq-codigo {
+            font-family: 'Courier New', monospace;
+            font-size: 9pt;
+            font-weight: bold;
+            color: #0f172a;
+            margin-top: 2px;
+        }
+        @media print {
+            .etq-full {
+                border: 1px solid #e2e8f0;
+            }
+        }
+    </style>
 </head>
-
 <body class="etq-grid">
 
 {% for e in etiquetas %}
 <div class="etq-full">
-    <img src="data:image/png;base64,{{ e.qr }}" class="qr">
-    <img src="data:image/png;base64,{{ e.barcode }}" class="barcode">
-    <strong>{{ e.codigo }}</strong><br>
-    {{ e.nome }}
+    <div class="etq-nome">{{ e.nome }}</div>
+    {% if e.marca %}<div class="etq-marca">[{{ e.marca }}]</div>{% endif %}
+    {% if e.qr %}<img src="data:image/png;base64,{{ e.qr }}" class="qr-img" alt="QR Code">{% endif %}
+    {% if e.barcode %}<img src="data:image/png;base64,{{ e.barcode }}" class="bar-img" alt="Código de Barras">{% endif %}
+    <div class="etq-codigo">{{ e.codigo }}</div>
 </div>
 {% endfor %}
 

@@ -1,17 +1,84 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <!-- Título exibido na aba do navegador ao visualizar o PDF -->
+    <meta charset="UTF-8">
     <title>InOutControl — Etiqueta Código de Barras</title>
+    <style>
+        @page {
+            size: auto;
+            margin: 5mm;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #ffffff;
+            -webkit-print-color-adjust: exact;
+        }
+        .etq-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 5px;
+        }
+        .etq-bar-box {
+            width: 65mm;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 6px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            page-break-inside: avoid;
+            background: #ffffff;
+        }
+        .bar-img {
+            width: 100%;
+            height: 15mm;
+            object-fit: contain;
+            margin: 2px 0;
+        }
+        .etq-codigo {
+            font-family: 'Courier New', monospace;
+            font-size: 9.5pt;
+            font-weight: bold;
+            color: #0f172a;
+            letter-spacing: 1px;
+        }
+        .etq-nome {
+            font-size: 8.5pt;
+            font-weight: 600;
+            color: #1e293b;
+            max-height: 2.3em;
+            overflow: hidden;
+            line-height: 1.15;
+            margin-bottom: 2px;
+        }
+        .etq-marca {
+            font-size: 7pt;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        @media print {
+            .etq-bar-box {
+                border: 1px solid #e2e8f0;
+            }
+        }
+    </style>
 </head>
-
 <body class="etq-grid">
 
 {% for e in etiquetas %}
-<div class="etq-small">
-    <img src="data:image/png;base64,{{ e.barcode }}" class="barcode">
-    <strong>{{ e.codigo }}</strong><br>
-    {{ e.nome }}
+<div class="etq-bar-box">
+    <div class="etq-nome">{{ e.nome }}</div>
+    {% if e.marca %}<div class="etq-marca">[{{ e.marca }}]</div>{% endif %}
+    {% if e.barcode %}
+        <img src="data:image/png;base64,{{ e.barcode }}" class="bar-img" alt="Código de Barras">
+    {% endif %}
+    <div class="etq-codigo">{{ e.codigo }}</div>
 </div>
 {% endfor %}
 

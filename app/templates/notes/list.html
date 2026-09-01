@@ -110,7 +110,7 @@
 
         <!-- Texto da Anotação -->
         <div class="note-content flex-grow-1 my-2">
-          {{ note.conteudo if note.conteudo else (note.observacao if note.observacao else 'Nenhum texto informado.') }}
+          {{ (note.conteudo if note.conteudo else (note.observacao if note.observacao else 'Nenhum texto informado.'))|safe }}
         </div>
 
         <!-- Ações do Card -->

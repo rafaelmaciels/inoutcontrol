@@ -4,7 +4,11 @@ import os
 import datetime
 import zipfile
 import sqlite3
-import pyminizip
+try:
+    import pyminizip
+except ImportError:
+    import pyzipper
+    pyminizip = None
 
 
 # Página do formulário
@@ -25,7 +29,7 @@ def backup_execute():
         return redirect(url_for("backup.backup_form"))
 
     # Caminho do banco
-    db_path = os.path.join(current_app.config["BASE_DIR"], "stockcontrol.db")
+    db_path = os.path.join(current_app.config["BASE_DIR"], "inoutcontrol.db")
 
     if not os.path.exists(db_path):
         flash("Banco de dados não encontrado!", "danger")
@@ -39,13 +43,18 @@ def backup_execute():
     zip_path = os.path.join(current_app.config["BASE_DIR"], zip_name)
 
     # Cria ZIP com senha
-    pyminizip.compress(
-        db_path,      # arquivo de entrada
-        None,         # sem pasta raiz
-        zip_path,     # arquivo de saída
-        senha,        # senha digitada
-        5             # nível de compressão (1–9)
-    )
+    if pyminizip:
+        pyminizip.compress(
+            db_path,      # arquivo de entrada
+            None,         # sem pasta raiz
+            zip_path,     # arquivo de saída
+            senha,        # senha digitada
+            5             # nível de compressão (1–9)
+        )
+    else:
+        with pyzipper.AESZipFile(zip_path, 'w', compression=pyzipper.ZIP_DEFLATED, encryption=pyzipper.WZ_AES) as zf:
+            zf.setpassword(senha.encode('utf-8'))
+            zf.write(db_path, arcname=os.path.basename(db_path))
 
     return send_file(
         zip_path,
@@ -82,18 +91,25 @@ def backup_import():
 
     # Caminhos temporários
     temp_zip = os.path.join(current_app.config["BASE_DIR"], "temp_backup.zip")
-    temp_db = os.path.join(current_app.config["BASE_DIR"], "stockcontrol.db")  # <-- CORRIGIDO
+    temp_db = os.path.join(current_app.config["BASE_DIR"], "inoutcontrol.db")  # <-- CORRIGIDO
 
     # Salva o ZIP temporário
     arquivo.save(temp_zip)
 
     # Tenta extrair o ZIP com a senha
     try:
-        with zipfile.ZipFile(temp_zip) as z:
-            z.extractall(
-                path=current_app.config["BASE_DIR"],
-                pwd=senha.encode()
-            )
+        if pyminizip:
+            with zipfile.ZipFile(temp_zip) as z:
+                z.extractall(
+                    path=current_app.config["BASE_DIR"],
+                    pwd=senha.encode()
+                )
+        else:
+            with pyzipper.AESZipFile(temp_zip) as z:
+                z.extractall(
+                    path=current_app.config["BASE_DIR"],
+                    pwd=senha.encode()
+                )
     except:
         os.remove(temp_zip)
         flash("Senha incorreta ou arquivo ZIP inválido!", "danger")
@@ -108,7 +124,7 @@ def backup_import():
         return redirect(url_for("backup.backup_form"))
 
     # Caminho do banco atual
-    db_path = os.path.join(current_app.config["BASE_DIR"], "stockcontrol.db")
+    db_path = os.path.join(current_app.config["BASE_DIR"], "inoutcontrol.db")
 
     # Substitui o banco atual
     os.replace(temp_db, db_path)

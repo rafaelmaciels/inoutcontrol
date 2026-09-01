@@ -1,33 +1,44 @@
 from flask import render_template
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 from app.dashboard import dashboard_bp
-from app.models import Movement, Part, User, Note  # 1. Importe o model Note aqui
+from app.models import Movement, Part, User, Note, Brand
 
 @dashboard_bp.route("/")
 def index():
-    # Últimas movimentações
+    # Últimas movimentações com joinedload para máxima performance
     ultimas_movimentacoes = (
         Movement.query
+        .options(
+            joinedload(Movement.user),
+            joinedload(Movement.part).joinedload(Part.brand)
+        )
         .order_by(Movement.data_hora.desc())
         .limit(10)
         .all()
     )
 
     # Empréstimos abertos
-    emprestimos_abertos = Movement.query.filter_by(
-        emprestimo_aberto=True,
-        tipo="saida"
-    ).all()
+    emprestimos_abertos = (
+        Movement.query
+        .options(
+            joinedload(Movement.user),
+            joinedload(Movement.part).joinedload(Part.brand)
+        )
+        .filter_by(emprestimo_aberto=True, tipo="saida")
+        .all()
+    )
 
     # Totais
     total_usuarios = User.query.count()
     total_pecas = Part.query.count()
     total_movimentacoes = Movement.query.count()
-    total_notas = Note.query.count()  # 2. Faz a contagem no banco de dados
+    total_notas = Note.query.count()
 
     # Baixo estoque — apenas peças realmente críticas (<= 2 unidades)
     baixo_estoque = (
         Part.query
+        .options(joinedload(Part.brand))
         .filter(Part.quantidade <= 2)
         .order_by(Part.quantidade.asc())
         .limit(5)
@@ -55,7 +66,7 @@ def index():
         total_usuarios=total_usuarios,
         total_pecas=total_pecas,
         total_movimentacoes=total_movimentacoes,
-        total_notas=total_notas,  # 3. Envia para o HTML
+        total_notas=total_notas,
         baixo_estoque=baixo_estoque,
         chart_labels=labels,
         chart_values=valores,

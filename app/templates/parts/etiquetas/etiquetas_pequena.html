@@ -1,16 +1,74 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <!-- Título exibido na aba do navegador ao visualizar o PDF -->
-    <title>InOutControl — Etiqueta Compacta</title>
+    <meta charset="UTF-8">
+    <title>InOutControl — Etiqueta Compacta (50x30mm)</title>
+    <style>
+        @page {
+            size: 50mm 30mm;
+            margin: 0;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #ffffff;
+            -webkit-print-color-adjust: exact;
+        }
+        .etq-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            padding: 2mm;
+        }
+        .etq-small {
+            width: 48mm;
+            height: 28mm;
+            border: 1px dashed #94a3b8;
+            border-radius: 4px;
+            padding: 2.5mm;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            page-break-after: always;
+        }
+        .etq-codigo {
+            font-family: 'Courier New', monospace;
+            font-size: 11pt;
+            font-weight: bold;
+            color: #0f172a;
+        }
+        .etq-nome {
+            font-size: 8pt;
+            font-weight: 600;
+            color: #334155;
+            max-height: 2.3em;
+            overflow: hidden;
+            line-height: 1.15;
+            margin-top: 2px;
+        }
+        .etq-marca {
+            font-size: 7pt;
+            color: #64748b;
+            font-weight: 500;
+        }
+        @media print {
+            .etq-small {
+                border: none;
+            }
+        }
+    </style>
 </head>
-
 <body class="etq-grid">
 
 {% for e in etiquetas %}
 <div class="etq-small">
-    <strong>{{ e.codigo }}</strong><br>
-    {{ e.nome }}
+    <div class="etq-codigo">{{ e.codigo }}</div>
+    <div class="etq-nome">{{ e.nome }}</div>
+    {% if e.marca %}<div class="etq-marca">[{{ e.marca }}]</div>{% endif %}
 </div>
 {% endfor %}
 

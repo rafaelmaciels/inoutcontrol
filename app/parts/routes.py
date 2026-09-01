@@ -1,10 +1,12 @@
-from flask import render_template, request, redirect, url_for, flash, make_response, current_app
+from flask import render_template, request, redirect, url_for, flash, current_app, jsonify
 from app.parts import parts_bp
 from app.extensions import db
-from app.models import Part
+from app.models import Part, Brand
 from app.utils.pagination import paginate
-from weasyprint import HTML, CSS
-from sqlalchemy import func
+from app.utils.formatters import allowed_file
+from app.utils.pdf import render_pdf_response
+from sqlalchemy import func, or_
+from sqlalchemy.orm import joinedload
 
 import qrcode
 import base64
@@ -17,10 +19,40 @@ from werkzeug.utils import secure_filename
 
 ITEMS_PER_PAGE = 10
 
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 
-def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+# ============================ # API AUTOCOMPLETE DE PEÇAS (BUSCA FIEL POR INICIAIS) # ============================
+@parts_bp.route("/api/autocomplete")
+def autocomplete_parts():
+    """
+    Retorna sugestões JSON para autocomplete fiel onde o nome ou código começa com as iniciais digitadas.
+    Exemplo: 'ALI' retorna itens começando com 'ALI...'.
+    """
+    termo = request.args.get("q", "").strip()
+    if not termo:
+        return jsonify([])
+
+    starts_like = f"{termo}%"
+    parts = Part.query.outerjoin(Brand, Part.brand_id == Brand.id).options(
+        joinedload(Part.brand)
+    ).filter(
+        or_(
+            Part.nome.ilike(starts_like),
+            Part.codigo.ilike(starts_like)
+        )
+    ).order_by(Part.nome.asc()).limit(10).all()
+
+    results = []
+    for p in parts:
+        results.append({
+            "id": p.id,
+            "codigo": p.codigo,
+            "nome": p.nome,
+            "marca": p.marca_nome,
+            "quantidade": p.quantidade,
+            "valor_custo": p.valor_custo or 0.0
+        })
+
+    return jsonify(results)
 
 
 # ============================ # LISTAR PEÇAS # ============================
@@ -28,19 +60,20 @@ def allowed_file(filename):
 def list_parts():
     termo = request.args.get("q", "").strip()
 
-    query = Part.query
+    query = Part.query.outerjoin(Brand, Part.brand_id == Brand.id).options(joinedload(Part.brand))
     if termo:
-        like = f"%{termo}%"
+        starts_like = f"{termo}%"
         query = query.filter(
-            (Part.nome.ilike(like)) |
-            (Part.codigo.ilike(like)) |
-            (Part.descricao.ilike(like))
+            or_(
+                Part.nome.ilike(starts_like),
+                Part.codigo.ilike(starts_like),
+                Brand.nome.ilike(starts_like)
+            )
         )
 
-    total_custo_estoque = db.session.query(
+    # Cálculo eficiente do custo total dos itens filtrados
+    total_custo_estoque = query.with_entities(
         func.sum(Part.quantidade * Part.valor_custo)
-    ).filter(
-        Part.id.in_(db.session.query(query.subquery().c.id))
     ).scalar() or 0.0
 
     parts = paginate(query.order_by(Part.nome.asc()), per_page=ITEMS_PER_PAGE)
@@ -59,23 +92,36 @@ def list_parts():
 # ============================ # NOVA PEÇA # ============================
 @parts_bp.route("/novo", methods=["GET", "POST"])
 def create_part():
+    marcas = Brand.query.order_by(Brand.nome.asc()).all()
+
     if request.method == "POST":
         nome = request.form.get("nome", "").strip()
         codigo = request.form.get("codigo", "").strip()
         descricao = request.form.get("descricao", "").strip()
         quantidade = request.form.get("quantidade", "").strip()
         valor_custo = request.form.get("valor_custo", "").strip()
+        marca_nome = request.form.get("marca", "").strip()
 
         if not nome or not codigo or not quantidade or not valor_custo:
             flash("Preencha todos os campos obrigatórios.", "danger")
-            return render_template("parts/form.html", part=None)
+            return render_template("parts/form.html", part=None, marcas=marcas)
 
         existente = Part.query.filter_by(codigo=codigo).first()
         if existente:
             flash("Já existe uma peça com esse código.", "danger")
-            return render_template("parts/form.html", part=None)
+            return render_template("parts/form.html", part=None, marcas=marcas)
 
         valor_custo = valor_custo.replace(",", ".")
+
+        # Gerencia marca associada
+        brand_id = None
+        if marca_nome:
+            brand = Brand.query.filter(func.lower(Brand.nome) == marca_nome.lower()).first()
+            if not brand:
+                brand = Brand(nome=marca_nome)
+                db.session.add(brand)
+                db.session.flush()
+            brand_id = brand.id
 
         foto_file = request.files.get("foto_arquivo")
         foto_filename = None
@@ -87,7 +133,7 @@ def create_part():
                 foto_filename = filename
             else:
                 flash("Formato de arquivo inválido. Envie apenas imagens (png, jpg, jpeg, gif).", "danger")
-                return render_template("parts/form.html", part=None)
+                return render_template("parts/form.html", part=None, marcas=marcas)
 
         part = Part(
             nome=nome,
@@ -95,20 +141,22 @@ def create_part():
             descricao=descricao,
             quantidade=int(quantidade),
             valor_custo=float(valor_custo),
-            foto=foto_filename
+            foto=foto_filename,
+            brand_id=brand_id
         )
         db.session.add(part)
         db.session.commit()
         flash("Peça cadastrada com sucesso!", "success")
         return redirect(url_for("parts.list_parts"))
 
-    return render_template("parts/form.html", part=None)
+    return render_template("parts/form.html", part=None, marcas=marcas)
 
 
 # ============================ # EDITAR PEÇA # ============================
 @parts_bp.route("/editar/<int:id>", methods=["GET", "POST"])
 def edit_part(id):
     part = Part.query.get_or_404(id)
+    marcas = Brand.query.order_by(Brand.nome.asc()).all()
 
     if request.method == "POST":
         nome = request.form.get("nome", "").strip()
@@ -116,17 +164,29 @@ def edit_part(id):
         descricao = request.form.get("descricao", "").strip()
         quantidade = request.form.get("quantidade", "").strip()
         valor_custo = request.form.get("valor_custo", "").strip()
+        marca_nome = request.form.get("marca", "").strip()
 
         if not nome or not codigo or not quantidade or not valor_custo:
             flash("Preencha todos os campos obrigatórios.", "danger")
-            return render_template("parts/form.html", part=part)
+            return render_template("parts/form.html", part=part, marcas=marcas)
 
         existente = Part.query.filter(Part.codigo == codigo, Part.id != part.id).first()
         if existente:
             flash("Já existe outra peça com esse código.", "danger")
-            return render_template("parts/form.html", part=part)
+            return render_template("parts/form.html", part=part, marcas=marcas)
 
         valor_custo = valor_custo.replace(",", ".")
+
+        # Gerencia marca associada
+        if marca_nome:
+            brand = Brand.query.filter(func.lower(Brand.nome) == marca_nome.lower()).first()
+            if not brand:
+                brand = Brand(nome=marca_nome)
+                db.session.add(brand)
+                db.session.flush()
+            part.brand_id = brand.id
+        else:
+            part.brand_id = None
 
         part.nome = nome
         part.codigo = codigo
@@ -146,13 +206,13 @@ def edit_part(id):
                 part.foto = filename
             else:
                 flash("Formato de arquivo inválido. Envie apenas imagens (png, jpg, jpeg, gif).", "danger")
-                return render_template("parts/form.html", part=part)
+                return render_template("parts/form.html", part=part, marcas=marcas)
 
         db.session.commit()
         flash("Peça atualizada com sucesso!", "success")
         return redirect(url_for("parts.list_parts"))
 
-    return render_template("parts/form.html", part=part)
+    return render_template("parts/form.html", part=part, marcas=marcas)
 
 
 # ============================ # EXCLUIR PEÇA # ============================
@@ -210,18 +270,17 @@ def etiquetas_pdf(modelo):
         etiquetas.append({
             "codigo": p.codigo,
             "nome": p.nome,
+            "marca": p.marca_nome,
             "qr": qr_base64,
             "barcode": barcode_base64
         })
 
     html = render_template(f"parts/etiquetas/etiquetas_{modelo}.html", etiquetas=etiquetas)
-    css_path = os.path.join(current_app.root_path, "static/css/styles.css")
-    pdf = HTML(string=html).write_pdf(stylesheets=[CSS(css_path)])
-
-    response = make_response(pdf)
-    response.headers["Content-Type"] = "application/pdf"
-    response.headers["Content-Disposition"] = f"inline; filename=etiquetas_{modelo}.pdf"
-    return response
+    return render_pdf_response(
+        html_content=html,
+        filename=f"etiquetas_{modelo}.pdf",
+        fallback_endpoint="parts.list_parts"
+    )
 
 
 # ============================ # RELATÓRIO GERAL DE PEÇAS (PDF) # ============================
@@ -229,7 +288,7 @@ def etiquetas_pdf(modelo):
 def relatorio_pecas():
     filtro = request.args.get("filtro", "todas")
 
-    query = Part.query.order_by(Part.nome.asc())
+    query = Part.query.options(joinedload(Part.brand)).order_by(Part.nome.asc())
     if filtro == "faltando":
         query = query.filter(Part.quantidade == 0)
     elif filtro == "baixo_estoque":
@@ -239,10 +298,8 @@ def relatorio_pecas():
     dia = datetime.now().strftime("%d-%m-%Y")
 
     html = render_template("parts/relatorio_pecas.html", pecas=parts, dia=dia, filtro=filtro)
-    css_path = os.path.join(current_app.root_path, "static/css/styles.css")
-    pdf = HTML(string=html).write_pdf(stylesheets=[CSS(css_path)])
-
-    response = make_response(pdf)
-    response.headers["Content-Type"] = "application/pdf"
-    response.headers["Content-Disposition"] = f"inline; filename=relatorio_pecas_{filtro}_{dia}.pdf"
-    return response
+    return render_pdf_response(
+        html_content=html,
+        filename=f"relatorio_pecas_{filtro}_{dia}.pdf",
+        fallback_endpoint="parts.list_parts"
+    )
