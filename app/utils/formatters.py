@@ -78,3 +78,38 @@ def gerar_proximo_codigo_peca() -> str:
 
     return proximo_codigo
 
+def gerar_proximo_codigo_usuario() -> str:
+    """
+    Analisa os códigos de usuários existentes no banco de dados e gera automaticamente o próximo
+    código no padrão 'USR-XXX' (iniciando a partir de USR-002 ou do próximo sequencial livre),
+    garantindo 100% de unicidade e evitando qualquer conflito.
+    Exemplo: Se existirem USR-001 até USR-005, gera 'USR-006'.
+    """
+    import re
+    from app.models import User
+
+    codigos = [u.codigo for u in User.query.with_entities(User.codigo).all() if u.codigo]
+
+    numericos = []
+    for c in codigos:
+        c_clean = str(c).strip().upper()
+        match = re.search(r"USR[-_]?(\d+)", c_clean)
+        if match:
+            numericos.append(int(match.group(1)))
+        elif c_clean.isdigit():
+            numericos.append(int(c_clean))
+
+    if numericos:
+        proximo_num = max(max(numericos) + 1, 2)
+    else:
+        proximo_num = 2
+
+    proximo_codigo = f"USR-{proximo_num:03d}"
+
+    while User.query.filter_by(codigo=proximo_codigo).first() is not None:
+        proximo_num += 1
+        proximo_codigo = f"USR-{proximo_num:03d}"
+
+    return proximo_codigo
+
+

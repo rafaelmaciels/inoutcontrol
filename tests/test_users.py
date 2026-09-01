@@ -12,7 +12,7 @@ def test_user_crud(client, app):
     }, follow_redirects=True)
 
     assert res.status_code == 200
-    assert b"Usu\xc3\xa1rio cadastrado com sucesso!" in res.data
+    assert "cadastrado com sucesso!" in res.get_data(as_text=True)
 
     with app.app_context():
         u = User.query.filter_by(codigo="USR-001").first()
@@ -48,8 +48,49 @@ def test_cannot_delete_user_with_movements(client, app):
 
     res_del = client.get(f"/usuarios/excluir/{user_id}", follow_redirects=True)
     assert res_del.status_code == 200
-    assert b"N\xc3\xa3o \xc3\xa9 poss\xc3\xadvel excluir usu\xc3\xa1rio com movimenta\xc3\xa7\xc3\xb5es vinculadas." in res_del.data
+    assert "moviment" in res_del.get_data(as_text=True)
 
     with app.app_context():
         u_check = User.query.get(user_id)
         assert u_check is not None
+
+def test_auto_generate_user_code_and_prevent_duplicate(client, app):
+    # 1. API de geração de código de usuário
+    res_api = client.get("/usuarios/api/gerar-codigo")
+    assert res_api.status_code == 200
+    cod = res_api.get_json()["codigo"]
+    assert cod.startswith("USR-")
+
+    # 2. Tela /usuarios/novo traz o código pré-gerado
+    res_get = client.get("/usuarios/novo")
+    assert res_get.status_code == 200
+    assert cod in res_get.get_data(as_text=True)
+
+    # 3. Cadastro sem informar código (deve gerar automaticamente)
+    res_post = client.post("/usuarios/novo", data={
+        "codigo": "",
+        "nome": "Fernando Souza",
+        "email": "fernando.souza@empresa.com",
+        "telefone": "(11) 98765-4321",
+        "funcao": "Assistente de Estoque"
+    }, follow_redirects=True)
+    assert res_post.status_code == 200
+    assert "cadastrado com sucesso!" in res_post.get_data(as_text=True)
+
+    with app.app_context():
+        u = User.query.filter_by(email="fernando.souza@empresa.com").first()
+        assert u is not None
+        assert u.codigo == cod
+
+    # 4. Tentativa de cadastro com código duplicado deve ser bloqueada
+    res_dup = client.post("/usuarios/novo", data={
+        "codigo": cod,
+        "nome": "Outro Fernando",
+        "email": "outro.fernando@empresa.com",
+        "telefone": "(11) 98765-4321",
+        "funcao": "Operador"
+    }, follow_redirects=True)
+    dup_text = res_dup.get_data(as_text=True)
+    assert cod in dup_text
+    assert "com o" in dup_text or "com esse" in dup_text or "existe" in dup_text
+

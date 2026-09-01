@@ -16,6 +16,12 @@ class User(db.Model):
     movements = db.relationship("Movement", back_populates="user")
     notes = db.relationship("Note", back_populates="user")  # Relacionamento com as notas
 
+    @validates('codigo')
+    def validate_codigo(self, key, value):
+        if value is not None:
+            return str(value).strip().upper()
+        return value
+
     def __repr__(self):
         return f"<User {self.codigo} - {self.nome}>"
 

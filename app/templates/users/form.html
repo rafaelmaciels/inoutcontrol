@@ -60,11 +60,25 @@
         
         <!-- Código do Usuário -->
         <div class="col-md-6">
-          <label class="form-label form-label-clean fw-bold">Código Identificador</label>
-          <input type="text" name="codigo" class="form-control"
-                 value="{{ user.codigo if user else '' }}"
-                 placeholder="Ex: U001" required>
-          <div class="form-text text-muted" style="font-size: 0.75rem;">Este código será a chave de busca do operador.</div>
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label class="form-label form-label-clean fw-bold mb-0">Código Identificador</label>
+            {% if not user %}
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.7rem;">
+                <i class="bi bi-magic me-1"></i> Sugestão Automática
+              </span>
+            {% endif %}
+          </div>
+          <div class="input-group">
+            <input type="text" id="inputCodigo" name="codigo" class="form-control" style="text-transform: uppercase; font-family: monospace; font-weight: bold; letter-spacing: 0.5px;"
+                   value="{% if user %}{{ user.codigo }}{% elif codigo_sugerido %}{{ codigo_sugerido }}{% endif %}"
+                   placeholder="Ex: USR-002" required>
+            {% if not user %}
+            <button class="btn btn-outline-secondary" type="button" id="btnGerarCodigo" title="Gerar novo código sequencial">
+              <i class="bi bi-arrow-clockwise"></i> Gerar Novo
+            </button>
+            {% endif %}
+          </div>
+          <div class="form-text text-muted" style="font-size: 0.75rem;">Código padronizado único gerado automaticamente pelo sistema (pode ser editado se necessário).</div>
         </div>
 
         <!-- Nome Completo -->
@@ -117,4 +131,45 @@
 
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Geração assíncrona de código de usuário
+  const btn = document.getElementById('btnGerarCodigo');
+  const inputCod = document.getElementById('inputCodigo');
+  if (btn && inputCod) {
+    btn.addEventListener('click', async () => {
+      try {
+        btn.disabled = true;
+        const res = await fetch("{{ url_for('users.api_gerar_codigo') }}");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.codigo) {
+            inputCod.value = data.codigo;
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao gerar código de usuário:', err);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
+
+  // Conversão para UPPERCASE em tempo real
+  if (inputCod) {
+    inputCod.addEventListener('input', function() {
+      const start = this.selectionStart;
+      const end = this.selectionEnd;
+      this.value = this.value.toUpperCase();
+      if (start !== null && end !== null) {
+        this.setSelectionRange(start, end);
+      }
+    });
+  }
+});
+</script>
 {% endblock %}
