@@ -81,8 +81,11 @@
         </div>
         {% endif %}
 
-        <div class="d-flex justify-content-end mt-4">
-            <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-secondary btn-sm">
+        <div class="d-flex justify-content-end gap-2 mt-4">
+            <a href="{{ url_for('movements.comprovante', id=mov.id) }}" target="_blank" rel="noopener noreferrer" class="btn btn-dark btn-sm">
+                <i class="bi bi-printer me-1"></i> Imprimir Comprovante
+            </a>
+            <a href="{{ url_for('movements.list_movements') }}" class="btn btn-outline-secondary btn-sm">
                 Voltar
             </a>
         </div>

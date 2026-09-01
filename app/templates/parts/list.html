@@ -255,13 +255,13 @@
               </button>
               <ul class="dropdown-menu dropdown-menu-end shadow">
                 <li><h6 class="dropdown-header text-dark fw-bold">Modelos disponíveis:</h6></li>
-                <li><a class="dropdown-item small" href="{{ url_for('parts.etiquetas_pdf', modelo='termica', id=part.id) }}" target="_blank"><i class="bi bi-receipt me-2"></i>Térmica (80mm)</a></li>
-                <li><a class="dropdown-item small" href="{{ url_for('parts.etiquetas_pdf', modelo='pequena', id=part.id) }}" target="_blank"><i class="bi bi-grid-3x3-gap me-2"></i>Compacta (50x30)</a></li>
-                <li><a class="dropdown-item small" href="{{ url_for('parts.etiquetas_pdf', modelo='a4', id=part.id) }}" target="_blank"><i class="bi bi-file-earmark-text me-2"></i>Folha A4 (3 colunas)</a></li>
+                <li><a class="dropdown-item small" href="{{ url_for('parts.etiquetas_pdf', modelo='termica', id=part.id) }}" target="_blank" rel="noopener noreferrer"><i class="bi bi-receipt me-2"></i>Térmica (80mm)</a></li>
+                <li><a class="dropdown-item small" href="{{ url_for('parts.etiquetas_pdf', modelo='pequena', id=part.id) }}" target="_blank" rel="noopener noreferrer"><i class="bi bi-grid-3x3-gap me-2"></i>Compacta (50x30)</a></li>
+                <li><a class="dropdown-item small" href="{{ url_for('parts.etiquetas_pdf', modelo='a4', id=part.id) }}" target="_blank" rel="noopener noreferrer"><i class="bi bi-file-earmark-text me-2"></i>Folha A4 (3 colunas)</a></li>
                 <li><div class="dropdown-divider"></div></li>
-                <li><a class="dropdown-item small" href="{{ url_for('parts.etiquetas_pdf', modelo='qrcode', id=part.id) }}" target="_blank"><i class="bi bi-qr-code me-2"></i>Apenas QR Code</a></li>
-                <li><a class="dropdown-item small" href="{{ url_for('parts.etiquetas_pdf', modelo='barcode', id=part.id) }}" target="_blank"><i class="bi bi-upc-scan me-2"></i>Apenas Cód. Barras</a></li>
-                <li><a class="dropdown-item small" href="{{ url_for('parts.etiquetas_pdf', modelo='completo', id=part.id) }}" target="_blank"><i class="bi bi-layers me-2"></i>Etiqueta Completa</a></li>
+                <li><a class="dropdown-item small" href="{{ url_for('parts.etiquetas_pdf', modelo='qrcode', id=part.id) }}" target="_blank" rel="noopener noreferrer"><i class="bi bi-qr-code me-2"></i>Apenas QR Code</a></li>
+                <li><a class="dropdown-item small" href="{{ url_for('parts.etiquetas_pdf', modelo='barcode', id=part.id) }}" target="_blank" rel="noopener noreferrer"><i class="bi bi-upc-scan me-2"></i>Apenas Cód. Barras</a></li>
+                <li><a class="dropdown-item small" href="{{ url_for('parts.etiquetas_pdf', modelo='completo', id=part.id) }}" target="_blank" rel="noopener noreferrer"><i class="bi bi-layers me-2"></i>Etiqueta Completa</a></li>
               </ul>
             </div>
 

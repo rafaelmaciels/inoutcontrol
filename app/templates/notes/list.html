@@ -45,7 +45,7 @@
         </li>
         <li><hr class="dropdown-divider my-1"></li>
         <li>
-          <a class="dropdown-item d-flex align-items-center py-2" href="{{ url_for('notes.export_pdf', q=termo if termo is defined else '') }}" target="_blank">
+          <a class="dropdown-item d-flex align-items-center py-2" href="{{ url_for('notes.export_pdf', q=termo if termo is defined else '') }}" target="_blank" rel="noopener noreferrer">
             <i class="bi bi-file-earmark-pdf me-2 text-danger"></i> Exportar para PDF
           </a>
         </li>
